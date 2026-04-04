@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
+import { sendTaskAssignmentEmail } from "@/lib/email";
 import type { TaskStatus, Priority } from "@/types";
 
 export async function createTask(formData: FormData) {
@@ -44,6 +45,25 @@ export async function createTask(formData: FormData) {
   });
 
   await logActivity("created_task", "task", task.id, task.title);
+
+  // Send email notification to assignee
+  if (assigneeId) {
+    const assignee = await prisma.user.findUnique({ where: { id: assigneeId } });
+    if (assignee) {
+      const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+      sendTaskAssignmentEmail({
+        to: assignee.email,
+        assigneeName: assignee.name,
+        taskTitle: title,
+        taskDescription: description || undefined,
+        creatorName: session.user.name || "Alguien",
+        priority,
+        dueDate: dueDateStr || undefined,
+        taskUrl: `${baseUrl}/tasks`,
+      }).catch(console.error); // Fire and forget, don't block task creation
+    }
+  }
+
   revalidatePath("/tasks");
   revalidatePath("/");
   // Return plain serializable object

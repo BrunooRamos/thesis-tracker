@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
+import { getFileViewUrl } from "@/lib/file-url";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -108,9 +109,17 @@ export function Sidebar() {
         </Link>
 
         <div className="flex items-center gap-2.5 px-3 py-2">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff7c11] to-[#ff9a3e] flex items-center justify-center text-[10px] text-white font-semibold shrink-0">
-            {userName[0]}
-          </div>
+          {session?.user?.image ? (
+            <img
+              src={getFileViewUrl(session.user.image)}
+              alt={userName}
+              className="w-7 h-7 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-[#ff7c11] to-[#ff9a3e] flex items-center justify-center text-[10px] text-white font-semibold shrink-0">
+              {userName[0]}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="text-xs font-medium text-[#c5c0b6] truncate">
               {userName}

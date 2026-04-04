@@ -25,7 +25,9 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronRight,
+  Camera,
 } from "lucide-react";
+import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import {
   updatePhase,
@@ -392,6 +394,8 @@ function TeamSection({ users, onUpdate }: { users: User[]; onUpdate: (u: User[])
 
 function UserRow({ user }: { user: User }) {
   const [resetting, setResetting] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(user.avatar || "");
+  const [uploading, setUploading] = useState(false);
 
   async function handleReset() {
     if (!confirm(`¿Resetear contraseña de ${user.name}? Deberá configurarla nuevamente en /setup`)) return;
@@ -400,13 +404,56 @@ function UserRow({ user }: { user: User }) {
     setResetting(false);
   }
 
+  async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setAvatarUrl(data.url);
+      }
+    } catch (err) {
+      console.error("Avatar upload failed:", err);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   const avatarColors = ["from-[#ff7c11] to-[#ff9a3e]", "from-[#9a4a00] to-[#ff7c11]", "from-[#1a1c24] to-[#383c48]"];
   const idx = user.name === "Bruno" ? 0 : user.name === "Rodrigo" ? 1 : 2;
 
   return (
     <div className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#e9e7df]/30 transition-colors">
-      <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColors[idx % 3]} flex items-center justify-center text-[11px] text-white font-semibold`}>
-        {user.name[0]}
+      <div className="relative group">
+        {avatarUrl ? (
+          <img
+            src={getFileViewUrl(avatarUrl)}
+            alt={user.name}
+            className="w-8 h-8 rounded-full object-cover"
+          />
+        ) : (
+          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColors[idx % 3]} flex items-center justify-center text-[11px] text-white font-semibold`}>
+            {user.name[0]}
+          </div>
+        )}
+        <label className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+          {uploading ? (
+            <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+          ) : (
+            <Camera className="w-3 h-3 text-white" />
+          )}
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/gif,image/webp"
+            onChange={handleAvatarUpload}
+            className="hidden"
+            disabled={uploading}
+          />
+        </label>
       </div>
       <div className="flex-1">
         <p className="text-sm font-medium text-[#1a1c24]">{user.name}</p>
