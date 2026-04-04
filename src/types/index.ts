@@ -11,6 +11,7 @@ export type {
   MeetingNoteModel as MeetingNote,
   CommentModel as Comment,
   ActivityLogModel as ActivityLog,
+  ResourceModel as Resource,
 } from "@/generated/prisma/models";
 
 export type {
@@ -23,4 +24,5 @@ export type {
   ExperimentStatus,
   DecisionStatus,
   MeetingType,
+  ResourceCategory,
 } from "@/generated/prisma/enums";

@@ -25,12 +25,12 @@ const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "Tareas", href: "/tasks", icon: CheckSquare },
   { name: "Research", href: "/research", icon: BookOpen },
-  { name: "Timeline", href: "/timeline", icon: GanttChart, disabled: true },
-  { name: "Experimentos", href: "/experiments", icon: FlaskConical, disabled: true },
-  { name: "Decisiones", href: "/decisions", icon: Scale, disabled: true },
-  { name: "Reuniones", href: "/meetings", icon: Calendar, disabled: true },
-  { name: "Equipo", href: "/team", icon: Users, disabled: true },
-  { name: "Recursos", href: "/resources", icon: FolderOpen, disabled: true },
+  { name: "Timeline", href: "/timeline", icon: GanttChart },
+  { name: "Experimentos", href: "/experiments", icon: FlaskConical },
+  { name: "Decisiones", href: "/decisions", icon: Scale },
+  { name: "Reuniones", href: "/meetings", icon: Calendar },
+  { name: "Equipo", href: "/team", icon: Users },
+  { name: "Recursos", href: "/resources", icon: FolderOpen },
 ];
 
 export function Sidebar() {
@@ -71,11 +71,10 @@ export function Sidebar() {
           return (
             <Link
               key={item.name}
-              href={item.disabled ? "#" : item.href}
+              href={item.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] transition-all duration-150 group relative",
-                item.disabled && "pointer-events-none opacity-25",
                 isActive
                   ? "text-white bg-white/[0.08]"
                   : "text-[#7a7d87] hover:text-[#c5c0b6] hover:bg-white/[0.04]"
@@ -91,11 +90,6 @@ export function Sidebar() {
                 )}
               />
               <span>{item.name}</span>
-              {item.disabled && (
-                <span className="ml-auto text-[8px] uppercase tracking-wider text-[#535766] bg-white/[0.04] px-1.5 py-0.5 rounded">
-                  pronto
-                </span>
-              )}
             </Link>
           );
         })}

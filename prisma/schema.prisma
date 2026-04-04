@@ -22,6 +22,7 @@ model User {
   comments        Comment[]
   decisions       Decision[]
   meetingNotes    MeetingNote[]
+  resources       Resource[]
   createdAt       DateTime        @default(now())
 }
 
@@ -172,6 +173,18 @@ model Comment {
   createdAt       DateTime       @default(now())
 }
 
+model Resource {
+  id          String           @id @default(cuid())
+  name        String
+  url         String
+  description String?
+  category    ResourceCategory
+  pinned      Boolean          @default(false)
+  addedBy     User             @relation(fields: [addedById], references: [id])
+  addedById   String
+  createdAt   DateTime         @default(now())
+}
+
 model ActivityLog {
   id          String   @id @default(cuid())
   action      String
@@ -243,5 +256,15 @@ enum MeetingType {
   HORIZON_CHECKIN
   TEAM_INTERNAL
   TUTOR_ACADEMIC
+  OTHER
+}
+
+enum ResourceCategory {
+  PAPER
+  TOOL
+  DATASET
+  HORIZON_DOC
+  REPO
+  FACULTY_DOC
   OTHER
 }
