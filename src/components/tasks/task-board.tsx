@@ -15,6 +15,7 @@ import {
   Users as UsersIcon,
   User as UserIcon,
   Search,
+  CheckSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -210,33 +211,46 @@ export function TaskBoard({
       )}
 
       {/* Content */}
-      {viewMode === "kanban" && (
-        <KanbanView
-          tasks={filteredTasks}
-          onDragEnd={onDragEnd}
-          onSelectTask={setSelectedTask}
-        />
-      )}
-      {viewMode === "list" && (
-        <ListView tasks={filteredTasks} onSelectTask={setSelectedTask} />
-      )}
-      {viewMode === "person" && (
-        <PersonView
-          tasks={filteredTasks}
-          users={users}
-          onSelectTask={setSelectedTask}
-        />
-      )}
-      {viewMode === "personal" && (
-        <PersonalKanbanView
-          tasks={filteredTasks}
-          users={users}
-          currentUserId={currentUserId}
-          personalUserId={personalUserId}
-          onPersonalUserChange={setPersonalUserId}
-          onDragEnd={onDragEnd}
-          onSelectTask={setSelectedTask}
-        />
+      {tasks.length === 0 ? (
+        <div className="text-center py-16">
+          <CheckSquare className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#1a1c24] mb-1">Sin tareas aun</h3>
+          <p className="text-xs text-[#535766] mb-4">Empieza creando tu primera tarea para organizar el trabajo del equipo.</p>
+          <Button onClick={() => setShowCreate(true)} className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full text-xs">
+            <Plus className="w-3.5 h-3.5 mr-1" /> Crear primera tarea
+          </Button>
+        </div>
+      ) : (
+        <>
+          {viewMode === "kanban" && (
+            <KanbanView
+              tasks={filteredTasks}
+              onDragEnd={onDragEnd}
+              onSelectTask={setSelectedTask}
+            />
+          )}
+          {viewMode === "list" && (
+            <ListView tasks={filteredTasks} onSelectTask={setSelectedTask} />
+          )}
+          {viewMode === "person" && (
+            <PersonView
+              tasks={filteredTasks}
+              users={users}
+              onSelectTask={setSelectedTask}
+            />
+          )}
+          {viewMode === "personal" && (
+            <PersonalKanbanView
+              tasks={filteredTasks}
+              users={users}
+              currentUserId={currentUserId}
+              personalUserId={personalUserId}
+              onPersonalUserChange={setPersonalUserId}
+              onDragEnd={onDragEnd}
+              onSelectTask={setSelectedTask}
+            />
+          )}
+        </>
       )}
 
       {/* Create Dialog */}

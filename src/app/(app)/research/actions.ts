@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications";
 import type { ResearchType, Relevance } from "@/types";
 
 export async function createResearchEntry(formData: FormData) {
@@ -104,6 +105,25 @@ export async function addResearchComment(entryId: string, content: string) {
   const entry = await prisma.researchEntry.findUnique({ where: { id: entryId } });
   if (entry) {
     await logActivity("added_comment", "research", entryId, entry.title);
+  }
+
+  // @mention notifications
+  const mentionPattern = /@(\w+)/g;
+  const mentions = [...content.matchAll(mentionPattern)].map((m) => m[1]);
+  for (const name of mentions) {
+    const user = await prisma.user.findFirst({
+      where: { name: { contains: name, mode: "insensitive" } },
+    });
+    if (user && user.id !== session.user.id) {
+      createNotification({
+        userId: user.id,
+        type: "mentioned",
+        title: "Te mencionaron",
+        message: `${session.user.name} te menciono en un comentario`,
+        entityType: "research",
+        entityId: entryId,
+      }).catch(console.error);
+    }
   }
 
   revalidatePath("/research");

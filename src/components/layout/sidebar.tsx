@@ -21,6 +21,7 @@ import {
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { getFileViewUrl } from "@/lib/file-url";
+import { ThemeToggle } from "./theme-toggle";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -100,13 +101,16 @@ export function Sidebar() {
 
       {/* Bottom */}
       <div className="px-3 py-3 space-y-1">
-        <Link
-          href="/settings"
-          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-[#7a7d87] hover:text-[#c5c0b6] hover:bg-white/[0.04] transition-all"
-        >
-          <Settings className="w-[15px] h-[15px]" />
-          <span>Settings</span>
-        </Link>
+        <div className="flex items-center gap-1">
+          <Link
+            href="/settings"
+            className="flex-1 flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-[#7a7d87] hover:text-[#c5c0b6] hover:bg-white/[0.04] transition-all"
+          >
+            <Settings className="w-[15px] h-[15px]" />
+            <span>Settings</span>
+          </Link>
+          <ThemeToggle />
+        </div>
 
         <div className="flex items-center gap-2.5 px-3 py-2">
           {session?.user?.image ? (

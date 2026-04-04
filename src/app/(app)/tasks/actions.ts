@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
 import { sendTaskAssignmentEmail } from "@/lib/email";
+import { createNotification } from "@/lib/notifications";
 import type { TaskStatus, Priority } from "@/types";
 
 export async function createTask(formData: FormData) {
@@ -62,6 +63,20 @@ export async function createTask(formData: FormData) {
         dueDate: dueDateStr || undefined,
         taskUrl: `${baseUrl}/tasks`,
       }).catch(console.error); // Fire and forget, don't block task creation
+    }
+
+    // In-app notifications for assignees
+    for (const assignee of assignees) {
+      if (assignee.id !== session.user.id) {
+        createNotification({
+          userId: assignee.id,
+          type: "task_assigned",
+          title: "Tarea asignada",
+          message: `Te asignaron: ${title}`,
+          entityType: "task",
+          entityId: task.id,
+        }).catch(console.error);
+      }
     }
   }
 
@@ -151,6 +166,25 @@ export async function addTaskComment(taskId: string, content: string) {
   const task = await prisma.task.findUnique({ where: { id: taskId } });
   if (task) {
     await logActivity("added_comment", "task", taskId, task.title);
+  }
+
+  // @mention notifications
+  const mentionPattern = /@(\w+)/g;
+  const mentions = [...content.matchAll(mentionPattern)].map((m) => m[1]);
+  for (const name of mentions) {
+    const user = await prisma.user.findFirst({
+      where: { name: { contains: name, mode: "insensitive" } },
+    });
+    if (user && user.id !== session.user.id) {
+      createNotification({
+        userId: user.id,
+        type: "mentioned",
+        title: "Te mencionaron",
+        message: `${session.user.name} te menciono en un comentario`,
+        entityType: "task",
+        entityId: taskId,
+      }).catch(console.error);
+    }
   }
 
   revalidatePath("/tasks");

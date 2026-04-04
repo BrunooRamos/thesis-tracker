@@ -321,9 +321,22 @@ export function ExperimentLab({
       {/* Empty state */}
       {sorted.length === 0 && (
         <div className="text-center py-16">
-          <FlaskConical className="w-8 h-8 text-[#d3cfc6] mx-auto mb-3" />
-          <p className="text-sm text-[#535766]">No se encontraron experimentos</p>
-          <p className="text-xs text-[#535766]/60 mt-1">Crea uno nuevo o ajusta los filtros</p>
+          <FlaskConical className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
+            {search || activeFilterCount > 0
+              ? "No se encontraron experimentos"
+              : "Sin experimentos aun"}
+          </h3>
+          <p className="text-xs text-[#535766] mb-4">
+            {search || activeFilterCount > 0
+              ? "Ajusta los filtros o busqueda"
+              : "Registra tu primer experimento para empezar a iterar."}
+          </p>
+          {!search && activeFilterCount === 0 && (
+            <Button onClick={() => setShowCreate(true)} className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full text-xs">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Crear primer experimento
+            </Button>
+          )}
         </div>
       )}
 

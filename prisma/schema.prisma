@@ -23,6 +23,7 @@ model User {
   decisions       Decision[]
   meetingNotes    MeetingNote[]
   resources       Resource[]
+  notifications   Notification[]
   createdAt       DateTime        @default(now())
 }
 
@@ -159,6 +160,7 @@ model Decision {
   experimentId    String?
   // Tasks spawned from this decision
   tasks           Task[]          @relation("DecisionTask")
+  history         Json[]
   createdAt       DateTime        @default(now())
 }
 
@@ -194,6 +196,19 @@ model Comment {
   decision        Decision?      @relation(fields: [decisionId], references: [id], onDelete: Cascade)
   decisionId      String?
   createdAt       DateTime       @default(now())
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  type        String   // task_assigned, comment_added, milestone_approaching, decision_created, mentioned
+  title       String
+  message     String
+  read        Boolean  @default(false)
+  entityType  String?  // task, research, experiment, decision, meeting
+  entityId    String?
+  user        User     @relation(fields: [userId], references: [id])
+  userId      String
+  createdAt   DateTime @default(now())
 }
 
 model Resource {

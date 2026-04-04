@@ -64,6 +64,21 @@ export async function PATCH(
     }
   }
 
+  // Append to history on status change
+  if (body.status) {
+    const existing = await prisma.decision.findUnique({ where: { id } });
+    if (existing && body.status !== existing.status) {
+      const historyEntry = {
+        date: new Date().toISOString(),
+        previousStatus: existing.status,
+        newStatus: body.status,
+        changedBy: session.user?.name || "Unknown",
+        changedById: session.user?.id || "",
+      };
+      updateData.history = { push: historyEntry };
+    }
+  }
+
   const decision = await prisma.decision.update({
     where: { id },
     data: updateData,

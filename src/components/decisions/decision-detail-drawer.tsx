@@ -437,6 +437,51 @@ export function DecisionDetailDrawer({
               )}
             </div>
 
+            {/* History */}
+            {(() => {
+              const history = (decision.history ?? []) as {
+                date: string;
+                previousStatus: string;
+                newStatus: string;
+                changedBy: string;
+                changedById?: string;
+              }[];
+              if (history.length === 0) return null;
+              return (
+                <>
+                  <Separator className="bg-[#e9e7df]/80" />
+                  <div>
+                    <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
+                      Historial
+                    </label>
+                    <div className="space-y-2">
+                      {history.map((entry, i) => (
+                        <div
+                          key={i}
+                          className="flex items-center gap-2 text-[11px]"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#ff7c11] shrink-0" />
+                          <span className="text-[#1a1c24] font-medium">
+                            {entry.changedBy}
+                          </span>
+                          <span className="text-[#535766]">
+                            cambio de{" "}
+                            {statusLabel[entry.previousStatus] ||
+                              entry.previousStatus}{" "}
+                            a{" "}
+                            {statusLabel[entry.newStatus] || entry.newStatus}
+                          </span>
+                          <span className="text-[#535766]/50 ml-auto shrink-0">
+                            {format(new Date(entry.date), "dd/MM HH:mm")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
+
             {/* Comments */}
             <Separator className="bg-[#e9e7df]/80" />
             <div>

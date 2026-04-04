@@ -304,17 +304,23 @@ export function ResearchHub({
 
       {/* Content */}
       {filteredEntries.length === 0 ? (
-        <div className="rounded-xl border border-[#d3cfc6]/50 bg-white/40 p-12 text-center">
-          <BookOpen className="w-8 h-8 text-[#535766]/60 mx-auto mb-3" />
-          <p className="text-sm text-[#535766]">
+        <div className="text-center py-16">
+          <BookOpen className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
             {search || activeFilterCount > 0
               ? "No se encontraron resultados"
-              : "Aún no hay entries de research"}
+              : "Sin entries de research"}
+          </h3>
+          <p className="text-xs text-[#535766] mb-4">
+            {search || activeFilterCount > 0
+              ? "Intenta con otros filtros o busqueda"
+              : "Agrega tu primer paper, articulo o herramienta"}
           </p>
-          <p className="text-xs text-[#535766] mt-1">
-            {!search && activeFilterCount === 0 &&
-              "Agregá tu primer paper, artículo o herramienta"}
-          </p>
+          {!search && activeFilterCount === 0 && (
+            <Button onClick={() => setShowCreate(true)} className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full text-xs">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Agregar primer paper
+            </Button>
+          )}
         </div>
       ) : viewMode === "feed" ? (
         <div className="space-y-3">

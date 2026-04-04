@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications";
 import type { DecisionStatus } from "@/types";
 
 export async function createDecision(formData: FormData) {
@@ -61,9 +62,26 @@ export async function updateDecision(
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  // Build update payload, including history entry on status change
+  const updateData: Record<string, unknown> = { ...data };
+
+  if (data.status) {
+    const existing = await prisma.decision.findUnique({ where: { id } });
+    if (existing && data.status !== existing.status) {
+      const historyEntry = {
+        date: new Date().toISOString(),
+        previousStatus: existing.status,
+        newStatus: data.status,
+        changedBy: session.user.name,
+        changedById: session.user.id,
+      };
+      updateData.history = { push: historyEntry };
+    }
+  }
+
   const record = await prisma.decision.update({
     where: { id },
-    data,
+    data: updateData,
   });
 
   await logActivity("updated_decision", "decision", record.id, record.title);
@@ -101,6 +119,25 @@ export async function addDecisionComment(decisionId: string, content: string) {
   const record = await prisma.decision.findUnique({ where: { id: decisionId } });
   if (record) {
     await logActivity("added_comment", "decision", decisionId, record.title);
+  }
+
+  // @mention notifications
+  const mentionPattern = /@(\w+)/g;
+  const mentions = [...content.matchAll(mentionPattern)].map((m) => m[1]);
+  for (const name of mentions) {
+    const user = await prisma.user.findFirst({
+      where: { name: { contains: name, mode: "insensitive" } },
+    });
+    if (user && user.id !== session.user.id) {
+      createNotification({
+        userId: user.id,
+        type: "mentioned",
+        title: "Te mencionaron",
+        message: `${session.user.name} te menciono en un comentario`,
+        entityType: "decision",
+        entityId: decisionId,
+      }).catch(console.error);
+    }
   }
 
   revalidatePath("/decisions");

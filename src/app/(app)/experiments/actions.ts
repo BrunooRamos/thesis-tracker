@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { logActivity } from "@/lib/activity";
 import { revalidatePath } from "next/cache";
+import { createNotification } from "@/lib/notifications";
 import type { ExperimentStatus } from "@/types";
 import type { Prisma } from "@/generated/prisma/client";
 
@@ -107,6 +108,25 @@ export async function addExperimentComment(experimentId: string, content: string
   const experiment = await prisma.experiment.findUnique({ where: { id: experimentId } });
   if (experiment) {
     await logActivity("added_comment", "experiment", experimentId, experiment.name);
+  }
+
+  // @mention notifications
+  const mentionPattern = /@(\w+)/g;
+  const mentions = [...content.matchAll(mentionPattern)].map((m) => m[1]);
+  for (const name of mentions) {
+    const user = await prisma.user.findFirst({
+      where: { name: { contains: name, mode: "insensitive" } },
+    });
+    if (user && user.id !== session.user.id) {
+      createNotification({
+        userId: user.id,
+        type: "mentioned",
+        title: "Te mencionaron",
+        message: `${session.user.name} te menciono en un comentario`,
+        entityType: "experiment",
+        entityId: experimentId,
+      }).catch(console.error);
+    }
   }
 
   revalidatePath("/experiments");

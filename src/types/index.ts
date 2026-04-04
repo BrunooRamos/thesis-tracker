@@ -12,6 +12,7 @@ export type {
   CommentModel as Comment,
   ActivityLogModel as ActivityLog,
   ResourceModel as Resource,
+  NotificationModel as Notification,
 } from "@/generated/prisma/models";
 
 export type {

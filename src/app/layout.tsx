@@ -29,7 +29,7 @@ export default function RootLayout({
       lang="es"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full bg-[#f2f0ea]">
+      <body className="min-h-full bg-background">
         <Providers>
           {children}
           <Toaster position="bottom-right" richColors />

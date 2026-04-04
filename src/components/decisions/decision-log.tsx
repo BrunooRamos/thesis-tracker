@@ -167,11 +167,22 @@ export function DecisionLog({
       {/* Decision list */}
       {filtered.length === 0 ? (
         <div className="text-center py-16">
-          <Scale className="w-10 h-10 text-[#d3cfc6] mx-auto mb-3" />
-          <p className="text-sm text-[#535766]">No hay decisiones registradas</p>
-          <p className="text-xs text-[#535766]/60 mt-1">
-            Crea una nueva decision para comenzar
+          <Scale className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
+          <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
+            {search || statusFilter !== "ALL"
+              ? "No se encontraron decisiones"
+              : "Sin decisiones aun"}
+          </h3>
+          <p className="text-xs text-[#535766] mb-4">
+            {search || statusFilter !== "ALL"
+              ? "Ajusta los filtros o busqueda"
+              : "Registra tu primera decision para documentar las elecciones del proyecto."}
           </p>
+          {!search && statusFilter === "ALL" && (
+            <Button onClick={() => setShowCreate(true)} className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full text-xs">
+              <Plus className="w-3.5 h-3.5 mr-1" /> Registrar primera decision
+            </Button>
+          )}
         </div>
       ) : (
         <div className="space-y-3">

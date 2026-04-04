@@ -94,6 +94,42 @@
   --sidebar-ring: #ff7c11;
 }
 
+.dark {
+  --background: #1a1c24;
+  --foreground: #e9e7df;
+  --card: #2a2c34;
+  --card-foreground: #e9e7df;
+  --popover: #2a2c34;
+  --popover-foreground: #e9e7df;
+  --primary: #ff7c11;
+  --primary-foreground: #ffffff;
+  --secondary: #2a2c34;
+  --secondary-foreground: #e9e7df;
+  --muted: #2a2c34;
+  --muted-foreground: #7a7d87;
+  --accent: #2a2c34;
+  --accent-foreground: #e9e7df;
+  --destructive: #EF4444;
+  --border: #383c48;
+  --input: #383c48;
+  --ring: #ff7c11;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --chart-1: #ff7c11;
+  --chart-2: #9a4a00;
+  --chart-3: #10B981;
+  --chart-4: #F59E0B;
+  --chart-5: #EF4444;
+  --sidebar: #0f1015;
+  --sidebar-foreground: #e9e7df;
+  --sidebar-primary: #ff7c11;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1a1c24;
+  --sidebar-accent-foreground: #e9e7df;
+  --sidebar-border: #2a2c34;
+  --sidebar-ring: #ff7c11;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -203,3 +239,13 @@
 .prose-horizon :last-child {
   margin-bottom: 0;
 }
+
+.dark .prose-horizon { color: #c5c0b6; }
+.dark .prose-horizon h1, .dark .prose-horizon h2, .dark .prose-horizon h3 { color: #e9e7df; }
+.dark .prose-horizon strong { color: #e9e7df; }
+.dark .prose-horizon code { background: #383c48; color: #ff9a3e; }
+.dark .prose-horizon pre { background: #0f1015; }
+.dark .prose-horizon blockquote { border-left-color: #ff7c11; color: #7a7d87; }
+.dark .prose-horizon a { color: #ff9a3e; }
+.dark .prose-horizon a:hover { color: #ff7c11; }
+.dark .prose-horizon hr { border-top-color: #383c48; }

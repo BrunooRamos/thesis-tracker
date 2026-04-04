@@ -1,3 +1,5 @@
+// Rate limiting: intentionally skipped for 3-user team.
+// If needed later, add a simple in-memory counter per session.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
