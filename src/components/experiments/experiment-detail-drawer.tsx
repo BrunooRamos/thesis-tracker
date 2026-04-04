@@ -114,7 +114,7 @@ export function ExperimentDetailDrawer({
 
   return (
     <Sheet open={!!experiment} onOpenChange={() => onClose()}>
-      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
+      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-2xl p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <div className="flex items-start justify-between">
             <div className="flex-1 min-w-0">

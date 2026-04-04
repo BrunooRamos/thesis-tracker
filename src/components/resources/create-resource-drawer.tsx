@@ -126,7 +126,7 @@ export function CreateResourceDrawer({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-md p-0">
+      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-2xl p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center">

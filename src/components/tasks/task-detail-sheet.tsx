@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/ui/markdown";
 import { UserAvatar } from "@/components/ui/user-avatar";
-import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen, Scale } from "lucide-react";
+import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen, Scale, Pencil, Check } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -59,6 +59,12 @@ export function TaskDetailSheet({
 }) {
   const [comment, setComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
+  const [titleDraft, setTitleDraft] = useState("");
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [descDraft, setDescDraft] = useState("");
+  const [editingWbs, setEditingWbs] = useState(false);
+  const [wbsDraft, setWbsDraft] = useState("");
 
   if (!task) return null;
 
@@ -122,24 +128,48 @@ export function TaskDetailSheet({
 
   return (
     <Sheet open={!!task} onOpenChange={() => onClose()}>
-      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
+      <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-2xl p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              {task.wbsCode && (
-                <p className="text-[10px] font-mono text-[#535766] mb-1">
-                  {task.wbsCode}
-                </p>
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              {/* Editable WBS */}
+              <div className="flex items-center gap-1 mb-1 group/wbs">
+                {editingWbs ? (
+                  <form onSubmit={(e) => { e.preventDefault(); handleFieldChange("wbsCode", wbsDraft || null); setEditingWbs(false); }} className="flex items-center gap-1">
+                    <input value={wbsDraft} onChange={(e) => setWbsDraft(e.target.value)} placeholder="1.2.3" autoFocus className="text-[10px] font-mono text-[#535766] bg-white border border-[#d3cfc6] rounded px-1.5 py-0.5 w-20 focus:border-[#ff7c11] focus:outline-none" onBlur={() => { handleFieldChange("wbsCode", wbsDraft || null); setEditingWbs(false); }} />
+                  </form>
+                ) : (
+                  <button onClick={() => { setWbsDraft(task.wbsCode || ""); setEditingWbs(true); }} className="text-[10px] font-mono text-[#535766] hover:text-[#ff7c11] transition-colors">
+                    {task.wbsCode || "Sin WBS"} <Pencil className="w-2 h-2 inline ml-0.5 opacity-0 group-hover/wbs:opacity-100" />
+                  </button>
+                )}
+              </div>
+              {/* Editable title */}
+              {editingTitle ? (
+                <form onSubmit={(e) => { e.preventDefault(); if (titleDraft.trim()) handleFieldChange("title", titleDraft); setEditingTitle(false); }}>
+                  <input
+                    value={titleDraft}
+                    onChange={(e) => setTitleDraft(e.target.value)}
+                    autoFocus
+                    className="text-base font-semibold text-[#1a1c24] bg-white border border-[#d3cfc6] rounded-lg px-2 py-1 w-full focus:border-[#ff7c11] focus:outline-none focus:ring-1 focus:ring-[#ff7c11]/20"
+                    onBlur={() => { if (titleDraft.trim()) handleFieldChange("title", titleDraft); setEditingTitle(false); }}
+                  />
+                </form>
+              ) : (
+                <SheetTitle
+                  className="text-[#1a1c24] text-base font-semibold leading-snug cursor-pointer hover:text-[#ff7c11] transition-colors group/title"
+                  onClick={() => { setTitleDraft(task.title); setEditingTitle(true); }}
+                >
+                  {task.title}
+                  <Pencil className="w-3 h-3 inline ml-1.5 opacity-0 group-hover/title:opacity-100 text-[#535766]" />
+                </SheetTitle>
               )}
-              <SheetTitle className="text-[#1a1c24] text-base font-semibold leading-snug">
-                {task.title}
-              </SheetTitle>
             </div>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
+              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1 shrink-0"
             >
               <Trash2 className="w-3.5 h-3.5" />
             </Button>
@@ -236,16 +266,21 @@ export function TaskDetailSheet({
               </div>
             </div>
 
-            {/* Due date */}
-            {task.dueDate && (
-              <div className="flex items-center gap-2 text-xs text-[#535766]">
+            {/* Due date — editable */}
+            <div className="flex items-center gap-2 text-xs">
+              <Calendar className="w-3.5 h-3.5 text-[#535766]" />
+              <span className="text-[#535766]">Fecha límite:</span>
+              <input
+                type="date"
+                value={task.dueDate ? new Date(task.dueDate).toISOString().split("T")[0] : ""}
+                onChange={(e) => handleFieldChange("dueDate", e.target.value || null)}
+                className="text-xs bg-transparent border-none text-[#1a1c24] focus:outline-none cursor-pointer hover:text-[#ff7c11] transition-colors"
+              />
+            </div>
+            {!task.dueDate && (
+              <div className="flex items-center gap-2 text-xs text-[#535766]/50">
                 <Calendar className="w-3.5 h-3.5" />
-                <span>
-                  Fecha límite:{" "}
-                  {format(new Date(task.dueDate), "d 'de' MMMM, yyyy", {
-                    locale: es,
-                  })}
-                </span>
+                <span>Sin fecha límite — click para agregar</span>
               </div>
             )}
 
@@ -335,20 +370,46 @@ export function TaskDetailSheet({
               </div>
             )}
 
-            {/* Description — rendered as Markdown */}
-            {task.description && (
-              <>
-                <Separator className="bg-[#d3cfc6]/40" />
-                <div>
-                  <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
-                    Descripción
-                  </label>
-                  <div className="rounded-xl bg-white border border-[#d3cfc6]/30 p-4">
-                    <Markdown content={task.description} />
-                  </div>
+            {/* Description — editable, renders Markdown */}
+            <Separator className="bg-[#d3cfc6]/40" />
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                  Descripción
+                </label>
+                <button
+                  onClick={() => { setDescDraft(task.description || ""); setEditingDesc(!editingDesc); }}
+                  className="text-[9px] text-[#535766] hover:text-[#ff7c11] transition-colors flex items-center gap-1"
+                >
+                  {editingDesc ? <><Check className="w-2.5 h-2.5" /> Listo</> : <><Pencil className="w-2.5 h-2.5" /> Editar</>}
+                </button>
+              </div>
+              {editingDesc ? (
+                <textarea
+                  value={descDraft}
+                  onChange={(e) => setDescDraft(e.target.value)}
+                  onBlur={() => { handleFieldChange("description", descDraft || null); setEditingDesc(false); }}
+                  rows={8}
+                  autoFocus
+                  placeholder={"# Título\n## Subtítulo\n**negrita**, *itálica*\n- lista"}
+                  className="w-full rounded-xl bg-white border border-[#d3cfc6] p-4 text-sm font-mono text-[#383c48] placeholder:text-[#535766]/30 focus:border-[#ff7c11] focus:outline-none focus:ring-1 focus:ring-[#ff7c11]/20 resize-y"
+                />
+              ) : task.description ? (
+                <div
+                  className="rounded-xl bg-white border border-[#d3cfc6]/30 p-4 cursor-pointer hover:border-[#d3cfc6] transition-colors"
+                  onClick={() => { setDescDraft(task.description || ""); setEditingDesc(true); }}
+                >
+                  <Markdown content={task.description} />
                 </div>
-              </>
-            )}
+              ) : (
+                <button
+                  onClick={() => { setDescDraft(""); setEditingDesc(true); }}
+                  className="w-full rounded-xl border border-dashed border-[#d3cfc6] p-4 text-xs text-[#535766]/50 hover:border-[#ff7c11]/50 hover:text-[#ff7c11] transition-colors text-center"
+                >
+                  Click para agregar descripción (soporta Markdown)
+                </button>
+              )}
+            </div>
 
             {/* Comments */}
             <Separator className="bg-[#d3cfc6]/40" />
