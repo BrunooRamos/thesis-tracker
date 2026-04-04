@@ -24,7 +24,7 @@ import { TaskCard } from "./task-card";
 import { CreateTaskDialog } from "./create-task-dialog";
 import { TaskDetailSheet } from "./task-detail-sheet";
 import { TaskFilters } from "./task-filters";
-import type { Task, User, Phase, Tag, Comment } from "@/types";
+import type { Task, User, Phase, Tag, Comment, Resource, ResearchEntry } from "@/types";
 
 export type TaskWithRelations = Task & {
   assignee: User | null;
@@ -32,6 +32,8 @@ export type TaskWithRelations = Task & {
   tags: Tag[];
   phase: Phase | null;
   comments: (Comment & { user: User })[];
+  resource?: Resource | null;
+  researchEntry?: (ResearchEntry & { user: User }) | null;
 };
 
 type ViewMode = "kanban" | "list" | "person";

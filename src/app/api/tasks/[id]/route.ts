@@ -20,6 +20,8 @@ export async function GET(
       creator: true,
       tags: true,
       phase: true,
+      resource: true,
+      researchEntry: true,
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });
@@ -52,6 +54,8 @@ export async function PATCH(
     "assigneeId",
     "phaseId",
     "wbsCode",
+    "resourceId",
+    "researchEntryId",
   ];
 
   for (const field of allowedFields) {

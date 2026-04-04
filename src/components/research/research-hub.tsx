@@ -26,11 +26,13 @@ import { cn } from "@/lib/utils";
 import { ResearchCard } from "./research-card";
 import { CreateResearchDialog } from "./create-research-dialog";
 import { ResearchDetailSheet } from "./research-detail-sheet";
-import type { ResearchEntry, User, Comment } from "@/types";
+import type { ResearchEntry, User, Comment, Resource, Task } from "@/types";
 
 export type ResearchEntryWithRelations = ResearchEntry & {
   user: User;
   comments: (Comment & { user: User })[];
+  resource?: Resource | null;
+  tasks?: (Task & { assignee: User | null })[];
 };
 
 type ViewMode = "feed" | "grid";

@@ -11,18 +11,28 @@ export async function createResource(formData: FormData) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const name = formData.get("name") as string;
-  const url = formData.get("url") as string;
+  const url = formData.get("url") as string | null;
   const description = formData.get("description") as string | null;
   const category = formData.get("category") as ResourceCategory;
   const pinned = formData.get("pinned") === "on";
+  const fileUrl = formData.get("fileUrl") as string | null;
+  const fileName = formData.get("fileName") as string | null;
+  const fileType = formData.get("fileType") as string | null;
+
+  if (!url && !fileUrl) {
+    throw new Error("Either a URL or a file upload is required");
+  }
 
   const resource = await prisma.resource.create({
     data: {
       name,
-      url,
+      url: url || undefined,
       description: description || undefined,
       category,
       pinned,
+      fileUrl: fileUrl || undefined,
+      fileName: fileName || undefined,
+      fileType: fileType || undefined,
       addedById: session.user.id!,
     },
   });
@@ -30,7 +40,7 @@ export async function createResource(formData: FormData) {
   await logActivity("created_resource", "resource", resource.id, resource.name);
   revalidatePath("/resources");
   revalidatePath("/");
-  return resource;
+  return JSON.parse(JSON.stringify(resource));
 }
 
 export async function updateResource(
@@ -41,6 +51,9 @@ export async function updateResource(
     description?: string | null;
     category?: ResourceCategory;
     pinned?: boolean;
+    fileUrl?: string | null;
+    fileName?: string | null;
+    fileType?: string | null;
   }
 ) {
   const session = await auth();
@@ -54,7 +67,7 @@ export async function updateResource(
   await logActivity("updated_resource", "resource", resource.id, resource.name);
   revalidatePath("/resources");
   revalidatePath("/");
-  return resource;
+  return JSON.parse(JSON.stringify(resource));
 }
 
 export async function deleteResource(id: string) {

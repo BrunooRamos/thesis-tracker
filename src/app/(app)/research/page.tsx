@@ -5,6 +5,8 @@ export default async function ResearchPage() {
   const entries = await prisma.researchEntry.findMany({
     include: {
       user: true,
+      resource: true,
+      tasks: { include: { assignee: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
     orderBy: { createdAt: "desc" },

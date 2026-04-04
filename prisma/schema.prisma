@@ -54,23 +54,27 @@ model Milestone {
 }
 
 model Task {
-  id          String     @id @default(cuid())
-  title       String
-  description String?
-  status      TaskStatus @default(TODO)
-  priority    Priority   @default(MEDIUM)
-  assignee    User?      @relation("assignee", fields: [assigneeId], references: [id])
-  assigneeId  String?
-  creator     User       @relation("creator", fields: [creatorId], references: [id])
-  creatorId   String
-  phase       Phase?     @relation(fields: [phaseId], references: [id])
-  phaseId     String?
-  dueDate     DateTime?
-  tags        Tag[]
-  comments    Comment[]
-  wbsCode     String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  id              String         @id @default(cuid())
+  title           String
+  description     String?
+  status          TaskStatus     @default(TODO)
+  priority        Priority       @default(MEDIUM)
+  assignee        User?          @relation("assignee", fields: [assigneeId], references: [id])
+  assigneeId      String?
+  creator         User           @relation("creator", fields: [creatorId], references: [id])
+  creatorId       String
+  phase           Phase?         @relation(fields: [phaseId], references: [id])
+  phaseId         String?
+  dueDate         DateTime?
+  tags            Tag[]
+  comments        Comment[]
+  wbsCode         String?
+  resource        Resource?      @relation("ResourceTask", fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceId      String?
+  researchEntry   ResearchEntry? @relation("ResearchTask", fields: [researchEntryId], references: [id], onDelete: SetNull)
+  researchEntryId String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 }
 
 model Tag {
@@ -94,6 +98,9 @@ model ResearchEntry {
   userId      String
   comments    Comment[]
   experiments Experiment[] @relation("ExperimentResearch")
+  resource    Resource?    @relation("ResourceResearch", fields: [resourceId], references: [id], onDelete: SetNull)
+  resourceId  String?
+  tasks       Task[]       @relation("ResearchTask")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -174,15 +181,20 @@ model Comment {
 }
 
 model Resource {
-  id          String           @id @default(cuid())
-  name        String
-  url         String
-  description String?
-  category    ResourceCategory
-  pinned      Boolean          @default(false)
-  addedBy     User             @relation(fields: [addedById], references: [id])
-  addedById   String
-  createdAt   DateTime         @default(now())
+  id              String           @id @default(cuid())
+  name            String
+  url             String?
+  fileUrl         String?
+  fileName        String?
+  fileType        String?
+  description     String?
+  category        ResourceCategory
+  pinned          Boolean          @default(false)
+  addedBy         User             @relation(fields: [addedById], references: [id])
+  addedById       String
+  researchEntries ResearchEntry[]  @relation("ResourceResearch")
+  tasks           Task[]           @relation("ResourceTask")
+  createdAt       DateTime         @default(now())
 }
 
 model ActivityLog {

@@ -25,6 +25,7 @@ export async function createResearchEntry(formData: FormData) {
         .map((t) => t.trim())
         .filter(Boolean)
     : [];
+  const resourceId = formData.get("resourceId") as string | null;
 
   const entry = await prisma.researchEntry.create({
     data: {
@@ -37,6 +38,7 @@ export async function createResearchEntry(formData: FormData) {
       relevance,
       tags,
       userId,
+      resourceId: resourceId || undefined,
     },
     include: { user: true, comments: { include: { user: true } } },
   });
@@ -70,7 +72,7 @@ export async function updateResearchEntry(
   });
 
   revalidatePath("/research");
-  return entry;
+  return JSON.parse(JSON.stringify(entry));
 }
 
 export async function deleteResearchEntry(id: string) {

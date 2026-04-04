@@ -24,6 +24,8 @@ export async function createTask(formData: FormData) {
   const wbsCode = formData.get("wbsCode") as string | null;
   const dueDateStr = formData.get("dueDate") as string | null;
   const tagIds = formData.getAll("tagIds") as string[];
+  const resourceId = formData.get("resourceId") as string | null;
+  const researchEntryId = formData.get("researchEntryId") as string | null;
 
   const task = await prisma.task.create({
     data: {
@@ -35,6 +37,8 @@ export async function createTask(formData: FormData) {
       creatorId: session.user.id!,
       assigneeId: assigneeId || undefined,
       phaseId: phaseId || undefined,
+      resourceId: resourceId || undefined,
+      researchEntryId: researchEntryId || undefined,
       tags: tagIds.length > 0 ? { connect: tagIds.map((id) => ({ id })) } : undefined,
     },
   });

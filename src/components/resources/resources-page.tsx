@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import type { Resource, ResourceCategory } from "@/types";
-import type { User } from "@/types";
+import type { ResourceCategory, User, Phase, Tag } from "@/types";
 import { updateResource, deleteResource } from "@/app/(app)/resources/actions";
 import { CreateResourceDrawer } from "./create-resource-drawer";
+import { ResourceDetailSheet } from "./resource-detail-sheet";
+import type { ResourceWithRelations } from "./resource-detail-sheet";
+import { CreateTaskFromResourceDrawer } from "./create-task-from-resource-drawer";
+import { CreateResearchFromResourceDrawer } from "./create-research-from-resource-drawer";
 import {
   Search,
   Plus,
@@ -12,11 +15,14 @@ import {
   PinOff,
   ExternalLink,
   Trash2,
+  FileText,
+  BookOpen,
+  ListTodo,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-type ResourceWithUser = Resource & { addedBy: User };
+export type { ResourceWithRelations } from "./resource-detail-sheet";
 
 const CATEGORY_LABELS: Record<ResourceCategory, string> = {
   PAPER: "Paper",
@@ -50,13 +56,27 @@ const FILTER_TABS: { label: string; value: ResourceCategory | "ALL" }[] = [
 
 export function ResourcesPage({
   resources: initialResources,
+  users,
+  phases,
+  tags,
+  allResearchTags,
 }: {
-  resources: ResourceWithUser[];
+  resources: ResourceWithRelations[];
+  users: User[];
+  phases: Phase[];
+  tags: Tag[];
+  allResearchTags: string[];
 }) {
   const [resources, setResources] = useState(initialResources);
   const [filter, setFilter] = useState<ResourceCategory | "ALL">("ALL");
   const [search, setSearch] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedResource, setSelectedResource] =
+    useState<ResourceWithRelations | null>(null);
+  const [taskDrawerResource, setTaskDrawerResource] =
+    useState<ResourceWithRelations | null>(null);
+  const [researchDrawerResource, setResearchDrawerResource] =
+    useState<ResourceWithRelations | null>(null);
 
   const filtered = resources.filter((r) => {
     const matchesCategory = filter === "ALL" || r.category === filter;
@@ -71,7 +91,7 @@ export function ResourcesPage({
   const unpinned = filtered.filter((r) => !r.pinned);
 
   // Group unpinned by category
-  const grouped = unpinned.reduce<Record<string, ResourceWithUser[]>>(
+  const grouped = unpinned.reduce<Record<string, ResourceWithRelations[]>>(
     (acc, r) => {
       if (!acc[r.category]) acc[r.category] = [];
       acc[r.category].push(r);
@@ -80,7 +100,7 @@ export function ResourcesPage({
     {}
   );
 
-  async function handleTogglePin(resource: ResourceWithUser) {
+  async function handleTogglePin(resource: ResourceWithRelations) {
     const newPinned = !resource.pinned;
     setResources((prev) =>
       prev.map((r) => (r.id === resource.id ? { ...r, pinned: newPinned } : r))
@@ -90,12 +110,34 @@ export function ResourcesPage({
 
   async function handleDelete(id: string) {
     setResources((prev) => prev.filter((r) => r.id !== id));
+    if (selectedResource?.id === id) setSelectedResource(null);
     await deleteResource(id);
   }
 
-  function handleCreated(resource: ResourceWithUser) {
+  function handleCreated(resource: ResourceWithRelations) {
     setResources((prev) => [resource, ...prev]);
     setDrawerOpen(false);
+  }
+
+  function handleCardClick(resource: ResourceWithRelations) {
+    setSelectedResource(resource);
+  }
+
+  function handleCreateTask(resource: ResourceWithRelations) {
+    setTaskDrawerResource(resource);
+  }
+
+  function handleCreateResearch(resource: ResourceWithRelations) {
+    setResearchDrawerResource(resource);
+  }
+
+  function handleTaskCreated() {
+    // Reload page to get fresh data with relations
+    window.location.reload();
+  }
+
+  function handleResearchCreated() {
+    window.location.reload();
   }
 
   return (
@@ -161,6 +203,9 @@ export function ResourcesPage({
                 resource={r}
                 onTogglePin={handleTogglePin}
                 onDelete={handleDelete}
+                onClick={handleCardClick}
+                onCreateTask={handleCreateTask}
+                onCreateResearch={handleCreateResearch}
               />
             ))}
           </div>
@@ -180,6 +225,9 @@ export function ResourcesPage({
                 resource={r}
                 onTogglePin={handleTogglePin}
                 onDelete={handleDelete}
+                onClick={handleCardClick}
+                onCreateTask={handleCreateTask}
+                onCreateResearch={handleCreateResearch}
               />
             ))}
           </div>
@@ -198,6 +246,36 @@ export function ResourcesPage({
         onOpenChange={setDrawerOpen}
         onCreated={handleCreated}
       />
+
+      <ResourceDetailSheet
+        resource={selectedResource}
+        onClose={() => setSelectedResource(null)}
+        onCreateTask={handleCreateTask}
+        onCreateResearch={handleCreateResearch}
+        onDeleted={handleDelete}
+      />
+
+      <CreateTaskFromResourceDrawer
+        resource={taskDrawerResource}
+        users={users}
+        phases={phases}
+        tags={tags}
+        open={!!taskDrawerResource}
+        onOpenChange={(open) => {
+          if (!open) setTaskDrawerResource(null);
+        }}
+        onCreated={handleTaskCreated}
+      />
+
+      <CreateResearchFromResourceDrawer
+        resource={researchDrawerResource}
+        allTags={allResearchTags}
+        open={!!researchDrawerResource}
+        onOpenChange={(open) => {
+          if (!open) setResearchDrawerResource(null);
+        }}
+        onCreated={handleResearchCreated}
+      />
     </div>
   );
 }
@@ -206,26 +284,62 @@ function ResourceCard({
   resource,
   onTogglePin,
   onDelete,
+  onClick,
+  onCreateTask,
+  onCreateResearch,
 }: {
-  resource: ResourceWithUser;
-  onTogglePin: (r: ResourceWithUser) => void;
+  resource: ResourceWithRelations;
+  onTogglePin: (r: ResourceWithRelations) => void;
   onDelete: (id: string) => void;
+  onClick: (r: ResourceWithRelations) => void;
+  onCreateTask: (r: ResourceWithRelations) => void;
+  onCreateResearch: (r: ResourceWithRelations) => void;
 }) {
+  const hasFile = !!resource.fileUrl;
+
   return (
-    <div className="bg-white/60 border border-[#d3cfc6]/40 rounded-xl p-4 flex flex-col gap-2.5 group">
+    <div
+      className="bg-white/60 border border-[#d3cfc6]/40 rounded-xl p-4 flex flex-col gap-2.5 group cursor-pointer hover:border-[#ff7c11]/30 transition-colors"
+      onClick={() => onClick(resource)}
+    >
       <div className="flex items-start justify-between gap-2">
-        <a
-          href={resource.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-medium text-[#1a1c24] hover:text-[#ff7c11] transition-colors flex items-center gap-1.5 leading-tight"
-        >
-          {resource.name}
-          <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
-        </a>
+        <div className="flex items-center gap-1.5 leading-tight min-w-0">
+          {hasFile && (
+            <FileText className="w-3.5 h-3.5 text-[#535766]/50 shrink-0" />
+          )}
+          <span className="text-sm font-medium text-[#1a1c24] truncate">
+            {resource.name}
+          </span>
+          {resource.url && (
+            <ExternalLink className="w-3 h-3 shrink-0 opacity-50" />
+          )}
+        </div>
         <div className="flex items-center gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            onClick={() => onTogglePin(resource)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateResearch(resource);
+            }}
+            className="p-1 rounded hover:bg-blue-50 text-[#535766] hover:text-blue-500"
+            title="Crear analisis"
+          >
+            <BookOpen className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCreateTask(resource);
+            }}
+            className="p-1 rounded hover:bg-violet-50 text-[#535766] hover:text-violet-500"
+            title="Crear tarea"
+          >
+            <ListTodo className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(resource);
+            }}
             className="p-1 rounded hover:bg-[#e9e7df]/60 text-[#535766]"
             title={resource.pinned ? "Desfijar" : "Fijar"}
           >
@@ -236,7 +350,10 @@ function ResourceCard({
             )}
           </button>
           <button
-            onClick={() => onDelete(resource.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(resource.id);
+            }}
             className="p-1 rounded hover:bg-red-50 text-[#535766] hover:text-red-500"
             title="Eliminar"
           >

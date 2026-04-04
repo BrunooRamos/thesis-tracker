@@ -16,8 +16,8 @@ import {
   Trash2,
   Send,
   ExternalLink,
-  BookOpen,
   FileText,
+  BookOpen,
   GitBranch,
   Wrench,
   Video,
@@ -153,6 +153,54 @@ export function ResearchDetailSheet({
                     {tag}
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* Linked Resource */}
+            {entry.resource && (
+              <div className="rounded-xl bg-[#ff7c11]/[0.04] border border-[#ff7c11]/20 p-3">
+                <label className="text-[9px] text-[#ff7c11] uppercase tracking-wider font-semibold block mb-1.5">
+                  Recurso origen
+                </label>
+                <div className="flex items-center gap-2">
+                  {entry.resource.fileUrl ? (
+                    <FileText className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  ) : (
+                    <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  )}
+                  <a
+                    href={entry.resource.url || entry.resource.fileUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-[#1a1c24] hover:text-[#ff7c11] transition-colors"
+                  >
+                    {entry.resource.name}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Linked Tasks */}
+            {entry.tasks && entry.tasks.length > 0 && (
+              <div className="rounded-xl bg-[#e9e7df]/50 border border-[#d3cfc6]/30 p-3">
+                <label className="text-[9px] text-[#535766] uppercase tracking-wider font-semibold block mb-1.5">
+                  Tareas vinculadas ({entry.tasks.length})
+                </label>
+                <div className="space-y-1.5">
+                  {entry.tasks.map((t) => (
+                    <div key={t.id} className="flex items-center gap-2 text-xs">
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        t.status === "DONE" ? "bg-emerald-500" :
+                        t.status === "IN_PROGRESS" ? "bg-[#ff7c11]" :
+                        t.status === "IN_REVIEW" ? "bg-amber-500" : "bg-[#d3cfc6]"
+                      }`} />
+                      <span className="text-[#1a1c24] truncate">{t.title}</span>
+                      {t.assignee && (
+                        <span className="text-[9px] text-[#535766] ml-auto shrink-0">{t.assignee.name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

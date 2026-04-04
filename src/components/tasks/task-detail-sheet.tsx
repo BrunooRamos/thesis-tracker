@@ -20,7 +20,7 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
-import { Trash2, Send, Calendar } from "lucide-react";
+import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteTask, addTaskComment } from "@/app/(app)/tasks/actions";
@@ -250,6 +250,50 @@ export function TaskDetailSheet({
                     {tag.name}
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* Linked Resource */}
+            {task.resource && (
+              <div className="rounded-xl bg-[#ff7c11]/[0.04] border border-[#ff7c11]/20 p-3">
+                <label className="text-[9px] text-[#ff7c11] uppercase tracking-wider font-semibold block mb-1.5">
+                  Recurso vinculado
+                </label>
+                <div className="flex items-center gap-2">
+                  {task.resource.fileUrl ? (
+                    <FileText className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  ) : (
+                    <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  )}
+                  <a
+                    href={task.resource.url || task.resource.fileUrl || "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-medium text-[#1a1c24] hover:text-[#ff7c11] transition-colors"
+                  >
+                    {task.resource.name}
+                  </a>
+                </div>
+              </div>
+            )}
+
+            {/* Linked Research */}
+            {task.researchEntry && (
+              <div className="rounded-xl bg-[#9a4a00]/[0.04] border border-[#9a4a00]/20 p-3">
+                <label className="text-[9px] text-[#9a4a00] uppercase tracking-wider font-semibold block mb-1.5">
+                  Research vinculado
+                </label>
+                <div className="flex items-center gap-2">
+                  <BookOpen className="w-3.5 h-3.5 text-[#9a4a00]" />
+                  <span className="text-xs font-medium text-[#1a1c24]">
+                    {task.researchEntry.title}
+                  </span>
+                </div>
+                {task.researchEntry.user && (
+                  <p className="text-[9px] text-[#535766] mt-1 ml-5.5">
+                    por {task.researchEntry.user.name}
+                  </p>
+                )}
               </div>
             )}
 

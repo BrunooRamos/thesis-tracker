@@ -9,6 +9,8 @@ export default async function TasksPage() {
         creator: true,
         tags: true,
         phase: true,
+        resource: true,
+        researchEntry: { include: { user: true } },
         comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
       },
       orderBy: { createdAt: "desc" },
