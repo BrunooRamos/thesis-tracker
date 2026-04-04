@@ -151,17 +151,20 @@ model Decision {
 }
 
 model MeetingNote {
-  id           String      @id @default(cuid())
-  title        String
-  date         DateTime
-  type         MeetingType
-  attendees    String[]
-  summary      String
-  actionItems  Json[]
-  keyDecisions String?
-  author       User        @relation(fields: [authorId], references: [id])
-  authorId     String
-  createdAt    DateTime    @default(now())
+  id              String      @id @default(cuid())
+  title           String
+  date            DateTime
+  type            MeetingType
+  attendees       String[]
+  summary         String
+  actionItems     Json[]
+  keyDecisions    String?
+  transcriptUrl   String?
+  transcriptName  String?
+  transcriptType  String?
+  author          User        @relation(fields: [authorId], references: [id])
+  authorId        String
+  createdAt       DateTime    @default(now())
 }
 
 model Comment {

@@ -18,12 +18,12 @@ export async function createMeetingNote(formData: FormData) {
   const summary = formData.get("summary") as string;
   const actionItemsStr = formData.get("actionItems") as string | null;
   const keyDecisions = formData.get("keyDecisions") as string | null;
+  const transcriptUrl = formData.get("transcriptUrl") as string | null;
+  const transcriptName = formData.get("transcriptName") as string | null;
+  const transcriptType = formData.get("transcriptType") as string | null;
 
   const attendees = attendeesStr
-    ? attendeesStr
-        .split(",")
-        .map((a) => a.trim())
-        .filter(Boolean)
+    ? attendeesStr.split(",").map((a) => a.trim()).filter(Boolean)
     : [];
 
   let actionItems: Prisma.InputJsonValue[] = [];
@@ -44,6 +44,9 @@ export async function createMeetingNote(formData: FormData) {
       summary,
       actionItems,
       keyDecisions: keyDecisions || undefined,
+      transcriptUrl: transcriptUrl || undefined,
+      transcriptName: transcriptName || undefined,
+      transcriptType: transcriptType || undefined,
       authorId: session.user.id!,
     },
   });
@@ -51,7 +54,7 @@ export async function createMeetingNote(formData: FormData) {
   await logActivity("created_meeting", "meeting", meeting.id, meeting.title);
   revalidatePath("/meetings");
   revalidatePath("/");
-  return meeting;
+  return JSON.parse(JSON.stringify(meeting));
 }
 
 export async function updateMeetingNote(
@@ -64,6 +67,9 @@ export async function updateMeetingNote(
     summary?: string;
     actionItems?: Record<string, unknown>[];
     keyDecisions?: string | null;
+    transcriptUrl?: string | null;
+    transcriptName?: string | null;
+    transcriptType?: string | null;
   }
 ) {
   const session = await auth();
@@ -78,16 +84,18 @@ export async function updateMeetingNote(
   if (data.summary !== undefined) updateData.summary = data.summary;
   if (data.actionItems !== undefined) updateData.actionItems = data.actionItems;
   if (data.keyDecisions !== undefined) updateData.keyDecisions = data.keyDecisions;
+  if (data.transcriptUrl !== undefined) updateData.transcriptUrl = data.transcriptUrl;
+  if (data.transcriptName !== undefined) updateData.transcriptName = data.transcriptName;
+  if (data.transcriptType !== undefined) updateData.transcriptType = data.transcriptType;
 
   const meeting = await prisma.meetingNote.update({
     where: { id },
     data: updateData,
   });
 
-  await logActivity("updated_meeting", "meeting", meeting.id, meeting.title);
   revalidatePath("/meetings");
   revalidatePath("/");
-  return meeting;
+  return JSON.parse(JSON.stringify(meeting));
 }
 
 export async function deleteMeetingNote(id: string) {
@@ -114,15 +122,13 @@ export async function convertActionItemToTask(
   let assigneeId: string | undefined;
   if (actionItem.assignee) {
     const user = await prisma.user.findFirst({
-      where: {
-        name: {
-          contains: actionItem.assignee,
-          mode: "insensitive",
-        },
-      },
+      where: { name: { contains: actionItem.assignee, mode: "insensitive" } },
     });
     if (user) assigneeId = user.id;
   }
+
+  const meeting = await prisma.meetingNote.findUnique({ where: { id: meetingId } });
+  const meetingTitle = meeting?.title || "reunión";
 
   const task = await prisma.task.create({
     data: {
@@ -130,16 +136,14 @@ export async function convertActionItemToTask(
       creatorId: session.user.id!,
       assigneeId: assigneeId || undefined,
       dueDate: actionItem.dueDate ? new Date(actionItem.dueDate) : undefined,
-      description: `Creado desde reunión (ID: ${meetingId})`,
+      description: `> Acción de reunión: **${meetingTitle}**\n> ${meeting?.date ? new Date(meeting.date).toLocaleDateString("es") : ""}\n\n${actionItem.task}`,
+      priority: "MEDIUM",
     },
   });
 
-  await logActivity("created_task_from_meeting", "task", task.id, task.title, {
-    meetingId,
-  });
-
+  await logActivity("created_task", "task", task.id, task.title);
   revalidatePath("/meetings");
   revalidatePath("/tasks");
   revalidatePath("/");
-  return task;
+  return JSON.parse(JSON.stringify(task));
 }

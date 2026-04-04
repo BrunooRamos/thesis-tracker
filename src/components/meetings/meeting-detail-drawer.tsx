@@ -12,7 +12,17 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trash2, ArrowRightCircle, CheckCircle2 } from "lucide-react";
+import { Markdown } from "@/components/ui/markdown";
+import { getFileViewUrl } from "@/lib/file-url";
+import {
+  Trash2,
+  ArrowRightCircle,
+  CheckCircle2,
+  FileText,
+  Download,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -32,7 +42,7 @@ const typeBadgeStyles: Record<string, string> = {
 const typeLabel: Record<string, string> = {
   HORIZON_CHECKIN: "Horizon Check-in",
   TEAM_INTERNAL: "Interna",
-  TUTOR_ACADEMIC: "Tutor Academico",
+  TUTOR_ACADEMIC: "Tutor Académico",
   OTHER: "Otra",
 };
 
@@ -60,9 +70,15 @@ export function MeetingDetailDrawer({
     dueDate?: string;
   }[];
 
+  const hasTranscript = !!meeting.transcriptUrl;
+  const transcriptViewUrl = meeting.transcriptUrl
+    ? getFileViewUrl(meeting.transcriptUrl)
+    : null;
+  const isPdf = meeting.transcriptType?.includes("pdf");
+
   async function handleDelete() {
     if (!meeting) return;
-    if (!confirm("Eliminar esta reunion?")) return;
+    if (!confirm("Eliminar esta reunión?")) return;
     await deleteMeetingNote(meeting.id);
     onDeleted(meeting.id);
   }
@@ -83,6 +99,18 @@ export function MeetingDetailDrawer({
     }
   }
 
+  async function handleConvertAll() {
+    for (let i = 0; i < actionItems.length; i++) {
+      if (!convertedItems.has(i) && actionItems[i].task.trim()) {
+        await handleConvertToTask(i, actionItems[i]);
+      }
+    }
+  }
+
+  const unconvertedCount = actionItems.filter(
+    (_, i) => !convertedItems.has(i) && actionItems[i].task.trim()
+  ).length;
+
   return (
     <Sheet open={!!meeting} onOpenChange={() => onClose()}>
       <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
@@ -100,9 +128,7 @@ export function MeetingDetailDrawer({
                   {typeLabel[meeting.type]}
                 </Badge>
                 <span className="text-[10px] text-[#535766]">
-                  {format(new Date(meeting.date), "d MMMM yyyy", {
-                    locale: es,
-                  })}
+                  {format(new Date(meeting.date), "d MMMM yyyy", { locale: es })}
                 </span>
               </div>
             </div>
@@ -143,15 +169,58 @@ export function MeetingDetailDrawer({
               </div>
             )}
 
-            {/* Summary */}
+            {/* Transcript */}
+            {hasTranscript && (
+              <>
+                <Separator className="bg-[#e9e7df]/80" />
+                <div>
+                  <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
+                    Transcripción
+                  </label>
+                  <div className="flex items-center gap-3 bg-white border border-[#d3cfc6]/40 rounded-xl p-3">
+                    <div className="w-9 h-9 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
+                      <FileText className="w-4 h-4 text-[#ff7c11]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[#1a1c24] font-medium truncate">
+                        {meeting.transcriptName || "Transcripción"}
+                      </p>
+                      <p className="text-[9px] text-[#535766]">
+                        {meeting.transcriptType?.includes("pdf") ? "PDF" : "Imagen"}
+                      </p>
+                    </div>
+                    <a
+                      href={transcriptViewUrl!}
+                      target={isPdf ? "_blank" : undefined}
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff7c11] text-white text-[10px] font-medium hover:bg-[#ff9a3e] transition-colors"
+                    >
+                      {isPdf ? (
+                        <>
+                          <ExternalLink className="w-3 h-3" />
+                          Ver
+                        </>
+                      ) : (
+                        <>
+                          <Download className="w-3 h-3" />
+                          Descargar
+                        </>
+                      )}
+                    </a>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Summary — rendered as markdown */}
             <Separator className="bg-[#e9e7df]/80" />
             <div>
               <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
                 Resumen
               </label>
-              <p className="text-xs text-[#535766] leading-relaxed whitespace-pre-wrap">
-                {meeting.summary}
-              </p>
+              <div className="rounded-xl bg-white border border-[#d3cfc6]/30 p-4">
+                <Markdown content={meeting.summary} />
+              </div>
             </div>
 
             {/* Key decisions */}
@@ -162,21 +231,34 @@ export function MeetingDetailDrawer({
                   <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
                     Decisiones clave
                   </label>
-                  <p className="text-xs text-[#535766] leading-relaxed whitespace-pre-wrap">
-                    {meeting.keyDecisions}
-                  </p>
+                  <div className="rounded-xl bg-white border border-[#d3cfc6]/30 p-4">
+                    <Markdown content={meeting.keyDecisions} />
+                  </div>
                 </div>
               </>
             )}
 
-            {/* Action items */}
+            {/* Action items → Tasks */}
             {actionItems.length > 0 && (
               <>
                 <Separator className="bg-[#e9e7df]/80" />
                 <div>
-                  <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-3">
-                    Acciones ({actionItems.length})
-                  </label>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                      Acciones → Tareas ({actionItems.length})
+                    </label>
+                    {unconvertedCount > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleConvertAll}
+                        className="h-6 px-2 text-[10px] text-[#ff7c11] hover:text-[#ff9a3e] hover:bg-[#ff7c11]/5 gap-1"
+                      >
+                        <ArrowRightCircle className="w-3 h-3" />
+                        Crear todas ({unconvertedCount})
+                      </Button>
+                    )}
+                  </div>
                   <div className="space-y-2">
                     {actionItems.map((item, index) => {
                       const isConverted = convertedItems.has(index);
@@ -185,29 +267,25 @@ export function MeetingDetailDrawer({
                       return (
                         <div
                           key={index}
-                          className={`flex items-start gap-3 bg-white border rounded-lg p-3 ${
+                          className={`flex items-start gap-3 bg-white border rounded-xl p-3 transition-colors ${
                             isConverted
-                              ? "border-emerald-200/60 bg-emerald-50/30"
+                              ? "border-emerald-200 bg-emerald-50/30"
                               : "border-[#d3cfc6]/40"
                           }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs text-[#1a1c24] font-medium">
+                            <p className={`text-xs font-medium ${isConverted ? "text-emerald-700 line-through" : "text-[#1a1c24]"}`}>
                               {item.task}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
                               {item.assignee && (
-                                <span className="text-[10px] text-[#535766]">
+                                <span className="text-[10px] text-[#535766] bg-[#e9e7df]/50 px-1.5 py-0.5 rounded">
                                   {item.assignee}
                                 </span>
                               )}
                               {item.dueDate && (
                                 <span className="text-[10px] text-[#535766]/60">
-                                  {format(
-                                    new Date(item.dueDate),
-                                    "d MMM yyyy",
-                                    { locale: es }
-                                  )}
+                                  {format(new Date(item.dueDate), "d MMM", { locale: es })}
                                 </span>
                               )}
                             </div>
@@ -216,20 +294,24 @@ export function MeetingDetailDrawer({
                           {isConverted ? (
                             <div className="flex items-center gap-1 text-emerald-600 shrink-0">
                               <CheckCircle2 className="w-4 h-4" />
-                              <span className="text-[10px]">Creada</span>
+                              <span className="text-[10px] font-medium">En tareas</span>
                             </div>
                           ) : (
                             <Button
                               variant="ghost"
                               size="sm"
                               disabled={isConverting}
-                              onClick={() =>
-                                handleConvertToTask(index, item)
-                              }
-                              className="h-7 px-2 text-[10px] text-[#ff7c11] hover:text-[#ff9a3e] hover:bg-[#ff7c11]/5 shrink-0 gap-1"
+                              onClick={() => handleConvertToTask(index, item)}
+                              className="h-7 px-2.5 text-[10px] text-[#ff7c11] hover:text-white hover:bg-[#ff7c11] shrink-0 gap-1 rounded-full transition-colors"
                             >
-                              <ArrowRightCircle className="w-3.5 h-3.5" />
-                              Crear tarea
+                              {isConverting ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <>
+                                  <ArrowRightCircle className="w-3 h-3" />
+                                  Crear tarea
+                                </>
+                              )}
                             </Button>
                           )}
                         </div>
@@ -245,7 +327,6 @@ export function MeetingDetailDrawer({
             <div className="text-[10px] text-[#535766] space-y-1">
               <p>Creado por {meeting.author.name}</p>
               <p>
-                Creado{" "}
                 {format(new Date(meeting.createdAt), "dd/MM/yyyy HH:mm")}
               </p>
             </div>

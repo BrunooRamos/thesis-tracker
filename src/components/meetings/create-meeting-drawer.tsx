@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, X } from "lucide-react";
+import { Loader2, Plus, X, Upload, FileText, Check } from "lucide-react";
 import { createMeetingNote } from "@/app/(app)/meetings/actions";
 import type { MeetingNoteWithAuthor } from "./meetings-page";
 import type { User } from "@/types";
@@ -44,6 +44,11 @@ export function CreateMeetingDrawer({
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState("");
   const [actionItems, setActionItems] = useState<ActionItemInput[]>([]);
+  // Transcript state
+  const [transcriptUrl, setTranscriptUrl] = useState("");
+  const [transcriptName, setTranscriptName] = useState("");
+  const [transcriptType, setTranscriptType] = useState("");
+  const [uploading, setUploading] = useState(false);
 
   function addActionItem() {
     setActionItems((prev) => [...prev, { task: "", assignee: "", dueDate: "" }]);
@@ -53,14 +58,34 @@ export function CreateMeetingDrawer({
     setActionItems((prev) => prev.filter((_, i) => i !== index));
   }
 
-  function updateActionItem(
-    index: number,
-    field: keyof ActionItemInput,
-    value: string
-  ) {
+  function updateActionItem(index: number, field: keyof ActionItemInput, value: string) {
     setActionItems((prev) =>
       prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
     );
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        setTranscriptUrl(data.url);
+        setTranscriptName(data.fileName);
+        setTranscriptType(data.fileType);
+      } else {
+        alert(data.error || "Error al subir archivo");
+      }
+    } catch {
+      alert("Error al subir archivo");
+    } finally {
+      setUploading(false);
+    }
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -72,6 +97,12 @@ export function CreateMeetingDrawer({
     const validItems = actionItems.filter((ai) => ai.task.trim());
     formData.set("actionItems", JSON.stringify(validItems));
 
+    if (transcriptUrl) {
+      formData.set("transcriptUrl", transcriptUrl);
+      formData.set("transcriptName", transcriptName);
+      formData.set("transcriptType", transcriptType);
+    }
+
     try {
       const meeting = await createMeetingNote(formData);
       const res = await fetch(`/api/meetings/${meeting.id}`);
@@ -80,6 +111,9 @@ export function CreateMeetingDrawer({
         onCreated(full);
         setType("");
         setActionItems([]);
+        setTranscriptUrl("");
+        setTranscriptName("");
+        setTranscriptType("");
       } else {
         onOpenChange(false);
       }
@@ -90,34 +124,37 @@ export function CreateMeetingDrawer({
     }
   }
 
+  const typeLabels: Record<string, string> = {
+    HORIZON_CHECKIN: "Horizon Check-in",
+    TEAM_INTERNAL: "Interna",
+    TUTOR_ACADEMIC: "Tutor Académico",
+    OTHER: "Otra",
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <SheetTitle className="text-[#1a1c24] text-base font-semibold">
-            Nueva reunion
+            Nueva reunión
           </SheetTitle>
         </SheetHeader>
 
         <ScrollArea className="h-[calc(100vh-100px)]">
           <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
             <div>
-              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                Titulo *
-              </Label>
+              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Título *</Label>
               <Input
                 name="title"
                 required
-                placeholder="Nombre de la reunion"
+                placeholder="Nombre de la reunión"
                 className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                  Fecha *
-                </Label>
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Fecha *</Label>
                 <Input
                   name="date"
                   type="date"
@@ -125,23 +162,18 @@ export function CreateMeetingDrawer({
                   className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]"
                 />
               </div>
-
               <div>
-                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                  Tipo *
-                </Label>
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Tipo *</Label>
                 <Select value={type} onValueChange={(v) => setType(v ?? "")}>
                   <SelectTrigger className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue placeholder="Seleccionar..." />
+                    <SelectValue placeholder="Seleccionar...">
+                      {type ? typeLabels[type] : "Seleccionar..."}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="HORIZON_CHECKIN">
-                      Horizon Check-in
-                    </SelectItem>
+                    <SelectItem value="HORIZON_CHECKIN">Horizon Check-in</SelectItem>
                     <SelectItem value="TEAM_INTERNAL">Interna</SelectItem>
-                    <SelectItem value="TUTOR_ACADEMIC">
-                      Tutor Academico
-                    </SelectItem>
+                    <SelectItem value="TUTOR_ACADEMIC">Tutor Académico</SelectItem>
                     <SelectItem value="OTHER">Otra</SelectItem>
                   </SelectContent>
                 </Select>
@@ -149,9 +181,7 @@ export function CreateMeetingDrawer({
             </div>
 
             <div>
-              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                Asistentes
-              </Label>
+              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Asistentes</Label>
               <Input
                 name="attendees"
                 placeholder="Nombres separados por coma"
@@ -160,35 +190,82 @@ export function CreateMeetingDrawer({
             </div>
 
             <div>
-              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                Resumen *
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Resumen *</Label>
+                <span className="text-[9px] text-[#535766]/50">Soporta Markdown</span>
+              </div>
               <Textarea
                 name="summary"
                 required
                 rows={4}
-                placeholder="Resumen de lo discutido..."
-                className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
+                placeholder={"# Temas discutidos\n\n- Punto 1\n- Punto 2\n\n**Conclusión:** ..."}
+                className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none font-mono"
               />
             </div>
 
             <div>
-              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                Decisiones clave
-              </Label>
+              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Decisiones clave</Label>
               <Textarea
                 name="keyDecisions"
                 rows={2}
-                placeholder="Decisiones tomadas en la reunion..."
+                placeholder="Decisiones tomadas en la reunión..."
                 className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
               />
+            </div>
+
+            {/* Transcript upload */}
+            <div>
+              <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                Transcripción / Grabación
+              </Label>
+              {transcriptUrl ? (
+                <div className="mt-1.5 flex items-center gap-2 bg-white border border-emerald-200 rounded-lg p-2.5">
+                  <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 text-emerald-500" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[11px] text-[#1a1c24] font-medium truncate">{transcriptName}</p>
+                    <p className="text-[9px] text-emerald-600">Archivo subido</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setTranscriptUrl(""); setTranscriptName(""); setTranscriptType(""); }}
+                    className="text-[#535766]/40 hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <label className="mt-1.5 flex items-center gap-3 bg-white border border-dashed border-[#d3cfc6] rounded-lg p-3 cursor-pointer hover:border-[#ff7c11]/50 transition-colors">
+                  <div className="w-8 h-8 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
+                    {uploading ? (
+                      <Loader2 className="w-4 h-4 text-[#ff7c11] animate-spin" />
+                    ) : (
+                      <Upload className="w-4 h-4 text-[#ff7c11]" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-[#383c48] font-medium">
+                      {uploading ? "Subiendo..." : "Subir transcripción"}
+                    </p>
+                    <p className="text-[9px] text-[#535766]">PDF, imagen — máx. 10MB</p>
+                  </div>
+                  <input
+                    type="file"
+                    className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                    onChange={handleFileUpload}
+                    disabled={uploading}
+                  />
+                </label>
+              )}
             </div>
 
             {/* Action items */}
             <div>
               <div className="flex items-center justify-between mb-2">
                 <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                  Acciones
+                  Acciones → Tareas
                 </Label>
                 <Button
                   type="button"
@@ -202,58 +279,59 @@ export function CreateMeetingDrawer({
                 </Button>
               </div>
 
-              {actionItems.length === 0 && (
+              {actionItems.length === 0 ? (
                 <p className="text-[10px] text-[#535766]/50 italic">
-                  Sin acciones. Haz clic en Agregar para anadir.
+                  Las acciones se convierten en tareas asignables desde el detalle.
                 </p>
-              )}
-
-              <div className="space-y-3">
-                {actionItems.map((item, index) => (
-                  <div
-                    key={index}
-                    className="bg-white border border-[#d3cfc6]/40 rounded-lg p-3 space-y-2 relative"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => removeActionItem(index)}
-                      className="absolute top-2 right-2 text-[#535766]/40 hover:text-red-400 transition-colors"
+              ) : (
+                <div className="space-y-3">
+                  {actionItems.map((item, index) => (
+                    <div
+                      key={index}
+                      className="bg-white border border-[#d3cfc6]/40 rounded-lg p-3 space-y-2 relative"
                     >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => removeActionItem(index)}
+                        className="absolute top-2 right-2 text-[#535766]/40 hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
 
-                    <div>
                       <Input
                         value={item.task}
-                        onChange={(e) =>
-                          updateActionItem(index, "task", e.target.value)
-                        }
-                        placeholder="Descripcion de la accion"
+                        onChange={(e) => updateActionItem(index, "task", e.target.value)}
+                        placeholder="Qué hay que hacer"
                         className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
                       />
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2">
-                      <Input
-                        value={item.assignee}
-                        onChange={(e) =>
-                          updateActionItem(index, "assignee", e.target.value)
-                        }
-                        placeholder="Responsable"
-                        className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
-                      />
-                      <Input
-                        type="date"
-                        value={item.dueDate}
-                        onChange={(e) =>
-                          updateActionItem(index, "dueDate", e.target.value)
-                        }
-                        className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]"
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <Select
+                          value={item.assignee || undefined}
+                          onValueChange={(v) => updateActionItem(index, "assignee", v ?? "")}
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
+                            <SelectValue placeholder="Responsable">
+                              {item.assignee || "Responsable"}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((u) => (
+                              <SelectItem key={u.id} value={u.name}>{u.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Input
+                          type="date"
+                          value={item.dueDate}
+                          onChange={(e) => updateActionItem(index, "dueDate", e.target.value)}
+                          className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]"
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="pt-2">
@@ -262,10 +340,8 @@ export function CreateMeetingDrawer({
                 disabled={loading || !type}
                 className="w-full bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full"
               >
-                {loading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                ) : null}
-                Registrar reunion
+                {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Registrar reunión
               </Button>
             </div>
           </form>
