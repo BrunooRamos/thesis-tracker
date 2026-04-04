@@ -15,7 +15,7 @@ model User {
   needsSetup      Boolean         @default(true)
   avatar          String?
   role            String          @default("member")
-  assignedTasks   Task[]          @relation("assignee")
+  assignedTasks   Task[]          @relation("assignees")
   createdTasks    Task[]          @relation("creator")
   researchEntries ResearchEntry[]
   experiments     Experiment[]
@@ -59,8 +59,7 @@ model Task {
   description     String?
   status          TaskStatus     @default(TODO)
   priority        Priority       @default(MEDIUM)
-  assignee        User?          @relation("assignee", fields: [assigneeId], references: [id])
-  assigneeId      String?
+  assignees       User[]         @relation("assignees")
   creator         User           @relation("creator", fields: [creatorId], references: [id])
   creatorId       String
   phase           Phase?         @relation(fields: [phaseId], references: [id])

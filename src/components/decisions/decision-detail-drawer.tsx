@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Trash2,
   Send,
@@ -31,6 +31,7 @@ import {
   CheckCircle2,
   Circle,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -76,6 +77,7 @@ export function DecisionDetailDrawer({
   tags,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   decision: DecisionWithRelations | null;
   onClose: () => void;
@@ -84,6 +86,7 @@ export function DecisionDetailDrawer({
   tags: Tag[];
   onUpdated: (decision: DecisionWithRelations) => void;
   onDeleted: (id: string) => void;
+  onEdit?: (decision: DecisionWithRelations) => void;
 }) {
   const [comment, setComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
@@ -168,14 +171,26 @@ export function DecisionDetailDrawer({
                 {decision.title}
               </SheetTitle>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { onClose(); onEdit(decision); }}
+                  className="text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/10 -mt-1"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </SheetHeader>
 
@@ -400,8 +415,8 @@ export function DecisionDetailDrawer({
                       {taskStatusIcon[t.status] || taskStatusIcon.TODO}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs text-[#1a1c24] truncate">{t.title}</p>
-                        {t.assignee && (
-                          <p className="text-[10px] text-[#535766]">{t.assignee.name}</p>
+                        {t.assignees && t.assignees.length > 0 && (
+                          <p className="text-[10px] text-[#535766]">{t.assignees.map((a: { name: string }) => a.name).join(", ")}</p>
                         )}
                       </div>
                       <Badge
@@ -432,11 +447,7 @@ export function DecisionDetailDrawer({
               <div className="space-y-3 mb-4">
                 {decision.comments.map((c) => (
                   <div key={c.id} className="flex gap-2.5">
-                    <Avatar className="w-6 h-6 shrink-0">
-                      <AvatarFallback className="bg-[#e9e7df]/80 text-[10px] text-[#535766]">
-                        {c.user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar user={c.user} size="sm" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-medium text-[#383c48]">

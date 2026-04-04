@@ -1,6 +1,7 @@
 import { Calendar, MessageSquare } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type { TaskWithRelations } from "./task-board";
 
 const priorityDot: Record<string, string> = {
@@ -10,12 +11,6 @@ const priorityDot: Record<string, string> = {
   URGENT: "bg-red-500",
 };
 
-const avatarColors = [
-  "from-[#ff7c11] to-[#ff9a3e]",
-  "from-[#9a4a00] to-[#ff7c11]",
-  "from-[#1a1c24] to-[#383c48]",
-];
-
 export function TaskCard({
   task,
   isDragging,
@@ -23,8 +18,6 @@ export function TaskCard({
   task: TaskWithRelations;
   isDragging: boolean;
 }) {
-  const assigneeIdx = task.assignee?.name === "Bruno" ? 0 : task.assignee?.name === "Rodrigo" ? 1 : 2;
-
   return (
     <div
       className={cn(
@@ -83,10 +76,13 @@ export function TaskCard({
           </span>
         )}
 
-        {task.assignee && (
-          <span className={`w-5 h-5 rounded-full bg-gradient-to-br ${avatarColors[assigneeIdx]} flex items-center justify-center text-[9px] text-white font-semibold`}>
-            {task.assignee.name[0]}
-          </span>
+        {task.assignees.length > 0 && (
+          <div className="flex -space-x-1.5">
+            {task.assignees.slice(0, 3).map(a => (
+              <UserAvatar key={a.id} user={a} size="xs" />
+            ))}
+            {task.assignees.length > 3 && <span className="text-[8px] text-[#535766] ml-1">+{task.assignees.length - 3}</span>}
+          </div>
         )}
       </div>
     </div>

@@ -16,7 +16,7 @@ export async function GET(
   const task = await prisma.task.findUnique({
     where: { id },
     include: {
-      assignee: true,
+      assignees: true,
       creator: true,
       tags: true,
       phase: true,
@@ -52,7 +52,6 @@ export async function PATCH(
     "description",
     "status",
     "priority",
-    "assigneeId",
     "phaseId",
     "wbsCode",
     "resourceId",
@@ -70,11 +69,15 @@ export async function PATCH(
     updateData.dueDate = body.dueDate ? new Date(body.dueDate) : null;
   }
 
+  if ("assigneeIds" in body && Array.isArray(body.assigneeIds)) {
+    updateData.assignees = { set: body.assigneeIds.map((id: string) => ({ id })) };
+  }
+
   const task = await prisma.task.update({
     where: { id },
     data: updateData,
     include: {
-      assignee: true,
+      assignees: true,
       creator: true,
       tags: true,
       phase: true,

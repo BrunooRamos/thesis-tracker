@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import {
   Trash2,
   Send,
@@ -23,6 +23,7 @@ import {
   Video,
   HelpCircle,
   Scale,
+  Pencil,
 } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
@@ -60,11 +61,13 @@ export function ResearchDetailSheet({
   onClose,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   entry: ResearchEntryWithRelations | null;
   onClose: () => void;
   onUpdated: (entry: ResearchEntryWithRelations) => void;
   onDeleted: (id: string) => void;
+  onEdit?: (entry: ResearchEntryWithRelations) => void;
 }) {
   const [comment, setComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
@@ -110,14 +113,26 @@ export function ResearchDetailSheet({
                 {rel.label}
               </span>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { onClose(); onEdit(entry); }}
+                  className="text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/10"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[#535766] hover:text-red-400 hover:bg-red-400/10"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
           <SheetTitle className="text-[#1a1c24] text-base font-semibold leading-snug text-left">
             {entry.title}
@@ -197,8 +212,8 @@ export function ResearchDetailSheet({
                         t.status === "IN_REVIEW" ? "bg-amber-500" : "bg-[#d3cfc6]"
                       }`} />
                       <span className="text-[#1a1c24] truncate">{t.title}</span>
-                      {t.assignee && (
-                        <span className="text-[9px] text-[#535766] ml-auto shrink-0">{t.assignee.name}</span>
+                      {t.assignees && t.assignees.length > 0 && (
+                        <span className="text-[9px] text-[#535766] ml-auto shrink-0">{t.assignees.map((a: { name: string }) => a.name).join(", ")}</span>
                       )}
                     </div>
                   ))}
@@ -269,11 +284,7 @@ export function ResearchDetailSheet({
               <div className="space-y-3 mb-4">
                 {entry.comments.map((c) => (
                   <div key={c.id} className="flex gap-2.5">
-                    <Avatar className="w-6 h-6 shrink-0">
-                      <AvatarFallback className="bg-[#e9e7df]/80 text-[10px] text-[#535766]">
-                        {c.user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar user={c.user} size="sm" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-medium text-[#383c48]">

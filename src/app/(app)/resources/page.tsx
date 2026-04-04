@@ -7,7 +7,7 @@ export default async function ResourcesServerPage() {
       include: {
         addedBy: true,
         researchEntries: { include: { user: true } },
-        tasks: { include: { assignee: true } },
+        tasks: { include: { assignees: true } },
       },
       orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     }),

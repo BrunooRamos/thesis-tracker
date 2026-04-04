@@ -24,7 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import { CreateExperimentDrawer } from "./create-experiment-drawer";
 import { ExperimentDetailDrawer } from "./experiment-detail-drawer";
@@ -407,11 +407,7 @@ function CardsView({
 
           {/* Footer */}
           <div className="flex items-center justify-between pt-1">
-            <Avatar className="w-5 h-5">
-              <AvatarFallback className="bg-[#e9e7df]/80 text-[9px] text-[#535766]">
-                {exp.user.name[0]}
-              </AvatarFallback>
-            </Avatar>
+            <UserAvatar user={exp.user} size="xs" />
             {exp.childExperiments.length > 0 && (
               <span className="text-[10px] text-[#535766]">
                 {exp.childExperiments.length} iteraci{exp.childExperiments.length === 1 ? "on" : "ones"}

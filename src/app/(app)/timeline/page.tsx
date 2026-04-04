@@ -9,7 +9,7 @@ export default async function TimelinePage() {
         orderBy: { number: "asc" },
       }),
       prisma.task.findMany({
-        include: { assignee: true, phase: true },
+        include: { assignees: true, phase: true },
         orderBy: { createdAt: "desc" },
       }),
       prisma.researchEntry.findMany({

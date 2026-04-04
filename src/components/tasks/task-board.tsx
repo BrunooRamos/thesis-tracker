@@ -13,11 +13,20 @@ import {
   List,
   LayoutGrid,
   Users as UsersIcon,
+  User as UserIcon,
   Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { updateTaskStatus } from "@/app/(app)/tasks/actions";
 import { TaskCard } from "./task-card";
@@ -27,7 +36,7 @@ import { TaskFilters } from "./task-filters";
 import type { Task, User, Phase, Tag, Comment, Resource, ResearchEntry, Decision } from "@/types";
 
 export type TaskWithRelations = Task & {
-  assignee: User | null;
+  assignees: User[];
   creator: User;
   tags: Tag[];
   phase: Phase | null;
@@ -37,7 +46,7 @@ export type TaskWithRelations = Task & {
   decision?: Decision | null;
 };
 
-type ViewMode = "kanban" | "list" | "person";
+type ViewMode = "kanban" | "list" | "person" | "personal";
 
 const columns = [
   { id: "TODO", label: "To Do", color: "text-[#535766]" },
@@ -51,11 +60,13 @@ export function TaskBoard({
   users,
   phases,
   tags,
+  currentUserId,
 }: {
   initialTasks: TaskWithRelations[];
   users: User[];
   phases: Phase[];
   tags: Tag[];
+  currentUserId: string;
 }) {
   const [tasks, setTasks] = useState(initialTasks);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
@@ -69,11 +80,12 @@ export function TaskBoard({
     priority: "",
     tagId: "",
   });
+  const [personalUserId, setPersonalUserId] = useState(currentUserId);
 
   const filteredTasks = tasks.filter((t) => {
     if (search && !t.title.toLowerCase().includes(search.toLowerCase()))
       return false;
-    if (filters.assigneeId && t.assigneeId !== filters.assigneeId) return false;
+    if (filters.assigneeId && !t.assignees.some(a => a.id === filters.assigneeId)) return false;
     if (filters.phaseId && t.phaseId !== filters.phaseId) return false;
     if (filters.priority && t.priority !== filters.priority) return false;
     if (filters.tagId && !t.tags.some((tag) => tag.id === filters.tagId))
@@ -147,6 +159,7 @@ export function TaskBoard({
               { mode: "kanban" as const, icon: LayoutGrid },
               { mode: "list" as const, icon: List },
               { mode: "person" as const, icon: UsersIcon },
+              { mode: "personal" as const, icon: UserIcon },
             ].map(({ mode, icon: Icon }) => (
               <button
                 key={mode}
@@ -201,6 +214,17 @@ export function TaskBoard({
         <PersonView
           tasks={filteredTasks}
           users={users}
+          onSelectTask={setSelectedTask}
+        />
+      )}
+      {viewMode === "personal" && (
+        <PersonalKanbanView
+          tasks={filteredTasks}
+          users={users}
+          currentUserId={currentUserId}
+          personalUserId={personalUserId}
+          onPersonalUserChange={setPersonalUserId}
+          onDragEnd={onDragEnd}
           onSelectTask={setSelectedTask}
         />
       )}
@@ -336,7 +360,7 @@ function ListView({
               Prioridad
             </th>
             <th className="text-left px-4 py-3 text-[#535766] uppercase tracking-wider font-medium hidden md:table-cell">
-              Asignado
+              Asignados
             </th>
             <th className="text-left px-4 py-3 text-[#535766] uppercase tracking-wider font-medium hidden lg:table-cell">
               Fase
@@ -385,10 +409,10 @@ function ListView({
                 <PriorityBadge priority={task.priority} />
               </td>
               <td className="px-4 py-3 text-[#535766] hidden md:table-cell">
-                {task.assignee?.name || "—"}
+                {task.assignees.length > 0 ? task.assignees.map(a => a.name).join(", ") : "\u2014"}
               </td>
               <td className="px-4 py-3 text-[#535766] hidden lg:table-cell">
-                {task.phase ? `F${task.phase.number}` : "—"}
+                {task.phase ? `F${task.phase.number}` : "\u2014"}
               </td>
             </tr>
           ))}
@@ -410,16 +434,14 @@ function PersonView({
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       {users.map((user) => {
-        const userTasks = tasks.filter((t) => t.assigneeId === user.id);
+        const userTasks = tasks.filter((t) => t.assignees.some(a => a.id === user.id));
         return (
           <div
             key={user.id}
             className="rounded-xl border border-[#d3cfc6]/50 bg-white/40"
           >
             <div className="px-4 py-3 border-b border-[#d3cfc6]/40 flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-600/30 to-violet-600/30 flex items-center justify-center text-[10px] text-[#1a1c24] font-medium">
-                {user.name[0]}
-              </div>
+              <UserAvatar user={user} size="sm" />
               <span className="text-xs font-medium text-[#1a1c24]">
                 {user.name}
               </span>
@@ -446,6 +468,126 @@ function PersonView({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+function PersonalKanbanView({
+  tasks,
+  users,
+  currentUserId,
+  personalUserId,
+  onPersonalUserChange,
+  onDragEnd,
+  onSelectTask,
+}: {
+  tasks: TaskWithRelations[];
+  users: User[];
+  currentUserId: string;
+  personalUserId: string;
+  onPersonalUserChange: (id: string) => void;
+  onDragEnd: (result: DropResult) => void;
+  onSelectTask: (task: TaskWithRelations) => void;
+}) {
+  const userTasks = tasks.filter((t) => t.assignees.some(a => a.id === personalUserId));
+  const selectedUser = users.find(u => u.id === personalUserId);
+
+  return (
+    <div className="space-y-4">
+      {/* User selector */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onPersonalUserChange(currentUserId)}
+          className={cn(
+            "h-8 text-xs border-[#d3cfc6]",
+            personalUserId === currentUserId && "bg-[#ff7c11]/10 border-[#ff7c11]/30 text-[#ff7c11]"
+          )}
+        >
+          <UserIcon className="w-3 h-3 mr-1.5" />
+          Mi Kanban
+        </Button>
+        <Select
+          value={personalUserId}
+          onValueChange={(v) => onPersonalUserChange(v ?? "")}
+        >
+          <SelectTrigger className="w-[180px] h-8 text-xs bg-white border-[#d3cfc6]">
+            <SelectValue>
+              {selectedUser?.name || "Seleccionar usuario"}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {users.map((u) => (
+              <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-[10px] text-[#535766] font-mono">
+          {userTasks.length} tareas
+        </span>
+      </div>
+
+      {/* Kanban columns for this user */}
+      <DragDropContext onDragEnd={onDragEnd}>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+          {columns.map((col) => {
+            const colTasks = userTasks.filter((t) => t.status === col.id);
+            return (
+              <div
+                key={col.id}
+                className="rounded-xl border border-[#d3cfc6]/40 bg-white/30 min-h-[200px]"
+              >
+                <div className="px-4 py-3 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium ${col.color}`}>
+                      {col.label}
+                    </span>
+                    <span className="text-[10px] text-[#535766] font-mono bg-[#e9e7df]/50 px-1.5 py-0.5 rounded">
+                      {colTasks.length}
+                    </span>
+                  </div>
+                </div>
+                <Droppable droppableId={col.id}>
+                  {(provided, snapshot) => (
+                    <div
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      className={cn(
+                        "px-2 pb-2 space-y-2 min-h-[100px] transition-colors rounded-b-xl",
+                        snapshot.isDraggingOver && "bg-white/40"
+                      )}
+                    >
+                      {colTasks.map((task, index) => (
+                        <Draggable
+                          key={task.id}
+                          draggableId={task.id}
+                          index={index}
+                        >
+                          {(provided, snapshot) => (
+                            <div
+                              ref={provided.innerRef}
+                              {...provided.draggableProps}
+                              {...provided.dragHandleProps}
+                              onClick={() => onSelectTask(task)}
+                            >
+                              <TaskCard
+                                task={task}
+                                isDragging={snapshot.isDragging}
+                              />
+                            </div>
+                          )}
+                        </Draggable>
+                      ))}
+                      {provided.placeholder}
+                    </div>
+                  )}
+                </Droppable>
+              </div>
+            );
+          })}
+        </div>
+      </DragDropContext>
     </div>
   );
 }

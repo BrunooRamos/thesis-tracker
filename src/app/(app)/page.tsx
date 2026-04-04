@@ -45,7 +45,7 @@ export default async function DashboardPage() {
       },
     }),
     prisma.task.findMany({
-      include: { assignee: true, phase: true, tags: true },
+      include: { assignees: true, phase: true, tags: true },
       orderBy: { createdAt: "desc" },
     }),
     prisma.activityLog.findMany({
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
   const overdueTasks = tasks.filter(
     (t) => t.dueDate && t.dueDate < now && t.status !== "DONE"
   );
-  const unassignedTasks = tasks.filter((t) => !t.assigneeId && t.status !== "DONE");
+  const unassignedTasks = tasks.filter((t) => t.assignees.length === 0 && t.status !== "DONE");
 
   // Project overall progress
   const totalPhaseProgress = phases.reduce((acc, p) => acc + p.progress, 0);

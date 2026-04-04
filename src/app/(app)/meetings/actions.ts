@@ -134,7 +134,7 @@ export async function convertActionItemToTask(
     data: {
       title: actionItem.task,
       creatorId: session.user.id!,
-      assigneeId: assigneeId || undefined,
+      assignees: assigneeId ? { connect: [{ id: assigneeId }] } : undefined,
       dueDate: actionItem.dueDate ? new Date(actionItem.dueDate) : undefined,
       description: `> Acción de reunión: **${meetingTitle}**\n> ${meeting?.date ? new Date(meeting.date).toLocaleDateString("es") : ""}\n\n${actionItem.task}`,
       priority: "MEDIUM",

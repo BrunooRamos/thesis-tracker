@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Plus, X, Upload, FileText, Check } from "lucide-react";
-import { createMeetingNote } from "@/app/(app)/meetings/actions";
+import { createMeetingNote, updateMeetingNote } from "@/app/(app)/meetings/actions";
 import type { MeetingNoteWithAuthor } from "./meetings-page";
 import type { User } from "@/types";
 
@@ -35,14 +35,17 @@ export function CreateMeetingDrawer({
   onOpenChange,
   onCreated,
   users,
+  editingItem,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (meeting: MeetingNoteWithAuthor) => void;
   users: User[];
+  editingItem?: MeetingNoteWithAuthor | null;
 }) {
+  const isEditing = !!editingItem;
   const [loading, setLoading] = useState(false);
-  const [type, setType] = useState("");
+  const [type, setType] = useState(editingItem?.type || "");
   const [actionItems, setActionItems] = useState<ActionItemInput[]>([]);
   // Transcript state
   const [transcriptUrl, setTranscriptUrl] = useState("");
@@ -104,18 +107,42 @@ export function CreateMeetingDrawer({
     }
 
     try {
-      const meeting = await createMeetingNote(formData);
-      const res = await fetch(`/api/meetings/${meeting.id}`);
-      if (res.ok) {
-        const full = await res.json();
-        onCreated(full);
-        setType("");
-        setActionItems([]);
-        setTranscriptUrl("");
-        setTranscriptName("");
-        setTranscriptType("");
+      if (isEditing && editingItem) {
+        const attendeesStr = formData.get("attendees") as string | null;
+        const attendees = attendeesStr
+          ? attendeesStr.split(",").map((a) => a.trim()).filter(Boolean)
+          : [];
+        await updateMeetingNote(editingItem.id, {
+          title: formData.get("title") as string,
+          date: formData.get("date") as string,
+          type: type as "HORIZON_CHECKIN" | "TEAM_INTERNAL" | "TUTOR_ACADEMIC" | "OTHER",
+          attendees,
+          summary: formData.get("summary") as string,
+          actionItems: validItems as unknown as Record<string, unknown>[],
+          keyDecisions: (formData.get("keyDecisions") as string) || null,
+          transcriptUrl: transcriptUrl || null,
+          transcriptName: transcriptName || null,
+          transcriptType: transcriptType || null,
+        });
+        const res = await fetch(`/api/meetings/${editingItem.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+        }
       } else {
-        onOpenChange(false);
+        const meeting = await createMeetingNote(formData);
+        const res = await fetch(`/api/meetings/${meeting.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+          setType("");
+          setActionItems([]);
+          setTranscriptUrl("");
+          setTranscriptName("");
+          setTranscriptType("");
+        } else {
+          onOpenChange(false);
+        }
       }
     } catch {
       // Error handling
@@ -136,7 +163,7 @@ export function CreateMeetingDrawer({
       <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <SheetTitle className="text-[#1a1c24] text-base font-semibold">
-            Nueva reunión
+            {isEditing ? "Editar reunión" : "Nueva reunión"}
           </SheetTitle>
         </SheetHeader>
 
@@ -147,6 +174,7 @@ export function CreateMeetingDrawer({
               <Input
                 name="title"
                 required
+                defaultValue={editingItem?.title || ""}
                 placeholder="Nombre de la reunión"
                 className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
               />
@@ -159,6 +187,7 @@ export function CreateMeetingDrawer({
                   name="date"
                   type="date"
                   required
+                  defaultValue={editingItem ? new Date(editingItem.date).toISOString().split("T")[0] : ""}
                   className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]"
                 />
               </div>
@@ -184,6 +213,7 @@ export function CreateMeetingDrawer({
               <Label className="text-[10px] text-[#535766] uppercase tracking-wider">Asistentes</Label>
               <Input
                 name="attendees"
+                defaultValue={editingItem?.attendees?.join(", ") || ""}
                 placeholder="Nombres separados por coma"
                 className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
               />
@@ -198,6 +228,7 @@ export function CreateMeetingDrawer({
                 name="summary"
                 required
                 rows={4}
+                defaultValue={editingItem?.summary || ""}
                 placeholder={"# Temas discutidos\n\n- Punto 1\n- Punto 2\n\n**Conclusión:** ..."}
                 className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none font-mono"
               />
@@ -208,6 +239,7 @@ export function CreateMeetingDrawer({
               <Textarea
                 name="keyDecisions"
                 rows={2}
+                defaultValue={editingItem?.keyDecisions || ""}
                 placeholder="Decisiones tomadas en la reunión..."
                 className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
               />
@@ -341,7 +373,7 @@ export function CreateMeetingDrawer({
                 className="w-full bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full"
               >
                 {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Registrar reunión
+                {isEditing ? "Guardar cambios" : "Registrar reunión"}
               </Button>
             </div>
           </form>

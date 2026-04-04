@@ -124,11 +124,11 @@ export async function createTaskFromDecision(
       title: data.title,
       description,
       creatorId: session.user.id!,
-      assigneeId: data.assigneeId || undefined,
+      assignees: data.assigneeId ? { connect: [{ id: data.assigneeId }] } : undefined,
       dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
       decisionId,
     },
-    include: { assignee: true },
+    include: { assignees: true },
   });
 
   await logActivity("created_task", "task", task.id, task.title);

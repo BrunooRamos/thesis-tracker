@@ -22,6 +22,7 @@ import {
   Download,
   Image as ImageIcon,
   Plus,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -31,7 +32,7 @@ import type { Resource, User, ResearchEntry, Task, ResourceCategory } from "@/ty
 export type ResourceWithRelations = Resource & {
   addedBy: User;
   researchEntries: (ResearchEntry & { user: User })[];
-  tasks: (Task & { assignee: User | null })[];
+  tasks: (Task & { assignees: User[] })[];
 };
 
 const CATEGORY_LABELS: Record<ResourceCategory, string> = {
@@ -85,12 +86,14 @@ export function ResourceDetailSheet({
   onCreateTask,
   onCreateResearch,
   onDeleted,
+  onEdit,
 }: {
   resource: ResourceWithRelations | null;
   onClose: () => void;
   onCreateTask: (resource: ResourceWithRelations) => void;
   onCreateResearch: (resource: ResourceWithRelations) => void;
   onDeleted: (id: string) => void;
+  onEdit?: (resource: ResourceWithRelations) => void;
 }) {
   if (!resource) return null;
 
@@ -129,14 +132,26 @@ export function ResourceDetailSheet({
                 <Pin className="w-3 h-3 text-[#ff7c11]" />
               )}
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { onClose(); onEdit(resource); }}
+                  className="text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/10"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[#535766] hover:text-red-400 hover:bg-red-400/10"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
           <SheetTitle className="text-[#1a1c24] text-base font-semibold leading-snug text-left">
             {resource.name}
@@ -295,9 +310,9 @@ export function ResourceDetailSheet({
                         >
                           {status.label}
                         </span>
-                        {task.assignee && (
+                        {task.assignees.length > 0 && (
                           <span className="text-[9px] text-[#535766]/60 shrink-0">
-                            {task.assignee.name}
+                            {task.assignees.map(a => a.name).join(", ")}
                           </span>
                         )}
                       </div>

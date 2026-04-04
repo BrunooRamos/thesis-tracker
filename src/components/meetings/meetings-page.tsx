@@ -5,7 +5,7 @@ import { Plus, Search, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreateMeetingDrawer } from "./create-meeting-drawer";
@@ -179,11 +179,7 @@ export function MeetingsPage({
                             key={i}
                             className="inline-flex items-center gap-1 bg-[#e9e7df]/60 rounded-full px-2 py-0.5"
                           >
-                            <Avatar className="w-3.5 h-3.5">
-                              <AvatarFallback className="bg-[#d3cfc6]/60 text-[7px] text-[#535766]">
-                                {a[0]}
-                              </AvatarFallback>
-                            </Avatar>
+                            <UserAvatar user={{ name: a }} size="xs" className="!w-3.5 !h-3.5 !text-[7px]" />
                             <span className="text-[10px] text-[#535766]">
                               {a}
                             </span>
@@ -203,11 +199,7 @@ export function MeetingsPage({
                       {format(new Date(m.date), "d MMM yyyy", { locale: es })}
                     </span>
                     <div className="flex items-center gap-1.5">
-                      <Avatar className="w-5 h-5">
-                        <AvatarFallback className="bg-[#e9e7df]/80 text-[9px] text-[#535766]">
-                          {m.author.name[0]}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar user={m.author} size="xs" />
                       <span className="text-[10px] text-[#535766]">
                         {m.author.name}
                       </span>

@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trash2, Send, GitBranch, FlaskConical, Scale } from "lucide-react";
+import { UserAvatar } from "@/components/ui/user-avatar";
+import { Trash2, Send, GitBranch, FlaskConical, Scale, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteExperiment, addExperimentComment } from "@/app/(app)/experiments/actions";
@@ -50,12 +50,14 @@ export function ExperimentDetailDrawer({
   users,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   experiment: ExperimentWithRelations | null;
   onClose: () => void;
   users: User[];
   onUpdated: (experiment: ExperimentWithRelations) => void;
   onDeleted: (id: string) => void;
+  onEdit?: (experiment: ExperimentWithRelations) => void;
 }) {
   const [comment, setComment] = useState("");
   const [sendingComment, setSendingComment] = useState(false);
@@ -126,14 +128,26 @@ export function ExperimentDetailDrawer({
                 {experiment.name}
               </SheetTitle>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { onClose(); onEdit(experiment); }}
+                  className="text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/10 -mt-1"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </SheetHeader>
 
@@ -346,11 +360,7 @@ export function ExperimentDetailDrawer({
               <div className="space-y-3 mb-4">
                 {experiment.comments.map((c) => (
                   <div key={c.id} className="flex gap-2.5">
-                    <Avatar className="w-6 h-6 shrink-0">
-                      <AvatarFallback className="bg-[#e9e7df]/80 text-[10px] text-[#535766]">
-                        {c.user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar user={c.user} size="sm" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-medium text-[#383c48]">

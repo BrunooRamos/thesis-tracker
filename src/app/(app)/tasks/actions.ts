@@ -18,7 +18,8 @@ export async function createTask(formData: FormData) {
   }
 
   const title = formData.get("title") as string;
-  const assigneeId = formData.get("assigneeId") as string | null;
+  const assigneeIdsRaw = formData.get("assigneeIds") as string | null;
+  const assigneeIds = assigneeIdsRaw ? assigneeIdsRaw.split(",").map(id => id.trim()).filter(Boolean) : [];
   const phaseId = formData.get("phaseId") as string | null;
   const priority = (formData.get("priority") as Priority) || "MEDIUM";
   const description = formData.get("description") as string | null;
@@ -36,7 +37,7 @@ export async function createTask(formData: FormData) {
       wbsCode: wbsCode || undefined,
       dueDate: dueDateStr ? new Date(dueDateStr) : undefined,
       creatorId: session.user.id!,
-      assigneeId: assigneeId || undefined,
+      assignees: assigneeIds.length > 0 ? { connect: assigneeIds.map((id) => ({ id })) } : undefined,
       phaseId: phaseId || undefined,
       resourceId: resourceId || undefined,
       researchEntryId: researchEntryId || undefined,
@@ -46,11 +47,11 @@ export async function createTask(formData: FormData) {
 
   await logActivity("created_task", "task", task.id, task.title);
 
-  // Send email notification to assignee
-  if (assigneeId) {
-    const assignee = await prisma.user.findUnique({ where: { id: assigneeId } });
-    if (assignee) {
-      const baseUrl = process.env.NEXTAUTH_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  // Send email notification to assignees
+  if (assigneeIds.length > 0) {
+    const assignees = await prisma.user.findMany({ where: { id: { in: assigneeIds } } });
+    const baseUrl = "https://horizon-thesis-um.online";
+    for (const assignee of assignees) {
       sendTaskAssignmentEmail({
         to: assignee.email,
         assigneeName: assignee.name,
@@ -96,7 +97,7 @@ export async function updateTask(taskId: string, data: {
   title?: string;
   description?: string | null;
   priority?: Priority;
-  assigneeId?: string | null;
+  assigneeIds?: string[];
   phaseId?: string | null;
   wbsCode?: string | null;
   dueDate?: string | null;
@@ -105,11 +106,13 @@ export async function updateTask(taskId: string, data: {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  const { assigneeIds, ...rest } = data;
   const task = await prisma.task.update({
     where: { id: taskId },
     data: {
-      ...data,
-      dueDate: data.dueDate ? new Date(data.dueDate) : data.dueDate === null ? null : undefined,
+      ...rest,
+      dueDate: rest.dueDate ? new Date(rest.dueDate) : rest.dueDate === null ? null : undefined,
+      ...(assigneeIds !== undefined ? { assignees: { set: assigneeIds.map(id => ({ id })) } } : {}),
     },
   });
 

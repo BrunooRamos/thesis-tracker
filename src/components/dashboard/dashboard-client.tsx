@@ -24,6 +24,7 @@ import {
   Zap,
 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
 import type { Phase, Milestone, User, Task, ActivityLog, ResearchEntry, Decision } from "@/types";
 
@@ -32,7 +33,7 @@ type DashboardData = {
   nextMilestones: (Milestone & { phase: Phase })[];
   allMilestones: (Milestone & { phase: Phase })[];
   users: (User & { assignedTasks: Task[]; _count: { assignedTasks: number; researchEntries: number; experiments: number } })[];
-  tasks: (Task & { assignee: User | null; phase: Phase | null })[];
+  tasks: (Task & { assignees: User[]; phase: Phase | null })[];
   activities: ActivityLog[];
   stats: {
     totalTasks: number;
@@ -282,13 +283,10 @@ export function DashboardClient({ data }: { data: DashboardData }) {
             {users.map((user, i) => {
               const activeTasks = user.assignedTasks.filter((t) => t.status !== "DONE");
               const doneTasks = user.assignedTasks.filter((t) => t.status === "DONE");
-              const avatarColors = ["from-[#ff7c11] to-[#ff9a3e]", "from-[#9a4a00] to-[#ff7c11]", "from-[#1a1c24] to-[#383c48]"];
               return (
                 <div key={user.id} className="rounded-xl bg-[#f2f0ea]/60 border border-[#d3cfc6]/30 p-4">
                   <div className="flex items-center gap-2.5 mb-3">
-                    <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${avatarColors[i % 3]} flex items-center justify-center text-xs text-white font-semibold`}>
-                      {user.name[0]}
-                    </div>
+                    <UserAvatar user={user} size="md" />
                     <div>
                       <p className="text-sm font-medium text-[#1a1c24]">{user.name}</p>
                       <p className="text-[9px] text-[#535766]">{user._count.researchEntries} research · {user._count.experiments} exp.</p>

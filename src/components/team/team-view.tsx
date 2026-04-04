@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import Link from "next/link";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import type {
   User,
   Task,
@@ -44,18 +45,6 @@ interface TeamViewProps {
 }
 
 // ---- Config ----
-
-const avatarGradients: Record<string, string> = {
-  Bruno: "from-[#ff7c11] to-[#ff9a3e]",
-  Rodrigo: "from-[#9a4a00] to-[#ff7c11]",
-  "Mart\u00edn": "from-[#1a1c24] to-[#383c48]",
-};
-
-const defaultGradients = [
-  "from-[#ff7c11] to-[#ff9a3e]",
-  "from-[#9a4a00] to-[#ff7c11]",
-  "from-[#1a1c24] to-[#383c48]",
-];
 
 const statusBadge: Record<string, string> = {
   TODO: "bg-[#e9e7df] text-[#535766]",
@@ -136,12 +125,7 @@ export function TeamView({ users, activitiesByUser }: TeamViewProps) {
 
       {/* Member cards */}
       <div className="space-y-6">
-        {users.map((user, idx) => {
-          const firstName = user.name.split(" ")[0];
-          const gradient =
-            avatarGradients[firstName] ||
-            defaultGradients[idx % defaultGradients.length];
-
+        {users.map((user) => {
           const activeTasks = user.assignedTasks.filter(
             (t) => t.status !== "DONE"
           );
@@ -171,11 +155,7 @@ export function TeamView({ users, activitiesByUser }: TeamViewProps) {
             >
               {/* Header */}
               <div className="flex items-center gap-4 mb-5">
-                <div
-                  className={`w-14 h-14 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-lg text-white font-semibold shrink-0`}
-                >
-                  {user.name[0]}
-                </div>
+                <UserAvatar user={user} size="lg" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2.5">
                     <h2 className="text-base font-semibold text-[#1a1c24]">

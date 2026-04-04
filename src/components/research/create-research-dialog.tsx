@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, BookOpen } from "lucide-react";
-import { createResearchEntry } from "@/app/(app)/research/actions";
+import { createResearchEntry, updateResearchEntry } from "@/app/(app)/research/actions";
 import type { ResearchEntryWithRelations } from "./research-hub";
 
 export function CreateResearchDialog({
@@ -28,12 +28,15 @@ export function CreateResearchDialog({
   onOpenChange,
   allTags,
   onCreated,
+  editingItem,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   allTags: string[];
   onCreated: (entry: ResearchEntryWithRelations) => void;
+  editingItem?: ResearchEntryWithRelations | null;
 }) {
+  const isEditing = !!editingItem;
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -41,8 +44,24 @@ export function CreateResearchDialog({
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     try {
-      const entry = (await createResearchEntry(formData)) as unknown as ResearchEntryWithRelations;
-      onCreated(entry);
+      if (isEditing && editingItem) {
+        const tagsStr = formData.get("tags") as string | null;
+        const tags = tagsStr ? tagsStr.split(",").map(t => t.trim()).filter(Boolean) : [];
+        const updated = await updateResearchEntry(editingItem.id, {
+          title: formData.get("title") as string,
+          type: formData.get("type") as "PAPER" | "ARTICLE" | "REPO" | "TOOL" | "VIDEO" | "OTHER",
+          url: (formData.get("url") as string) || null,
+          authors: (formData.get("authors") as string) || null,
+          summary: formData.get("summary") as string,
+          keyFindings: (formData.get("keyFindings") as string) || null,
+          relevance: formData.get("relevance") as "CRITICAL" | "HIGH" | "MEDIUM" | "LOW",
+          tags,
+        });
+        onCreated(updated as unknown as ResearchEntryWithRelations);
+      } else {
+        const entry = (await createResearchEntry(formData)) as unknown as ResearchEntryWithRelations;
+        onCreated(entry);
+      }
     } catch {
       // Error handling
     } finally {
@@ -59,7 +78,7 @@ export function CreateResearchDialog({
               <BookOpen className="w-4 h-4 text-[#ff7c11]" />
             </div>
             <SheetTitle className="text-[#1a1c24] text-sm font-semibold">
-              Nuevo Research Entry
+              {isEditing ? "Editar Research Entry" : "Nuevo Research Entry"}
             </SheetTitle>
           </div>
         </SheetHeader>
@@ -71,6 +90,7 @@ export function CreateResearchDialog({
               <Input
                 name="title"
                 required
+                defaultValue={editingItem?.title || ""}
                 placeholder="Nombre del paper, recurso, etc."
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -79,7 +99,7 @@ export function CreateResearchDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Tipo *</Label>
-                <Select name="type" defaultValue="PAPER">
+                <Select name="type" defaultValue={editingItem?.type || "PAPER"}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -95,7 +115,7 @@ export function CreateResearchDialog({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Relevancia</Label>
-                <Select name="relevance" defaultValue="MEDIUM">
+                <Select name="relevance" defaultValue={editingItem?.relevance || "MEDIUM"}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -114,6 +134,7 @@ export function CreateResearchDialog({
               <Input
                 name="url"
                 type="url"
+                defaultValue={editingItem?.url || ""}
                 placeholder="https://..."
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -123,6 +144,7 @@ export function CreateResearchDialog({
               <Label className="text-[#535766] text-xs font-medium">Autores</Label>
               <Input
                 name="authors"
+                defaultValue={editingItem?.authors || ""}
                 placeholder="Autor 1, Autor 2, ..."
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -133,6 +155,7 @@ export function CreateResearchDialog({
               <Textarea
                 name="summary"
                 required
+                defaultValue={editingItem?.summary || ""}
                 placeholder="De qué trata y por qué es relevante..."
                 rows={3}
                 className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -143,6 +166,7 @@ export function CreateResearchDialog({
               <Label className="text-[#535766] text-xs font-medium">Hallazgos clave</Label>
               <Textarea
                 name="keyFindings"
+                defaultValue={editingItem?.keyFindings || ""}
                 placeholder="Qué nos sirve de este recurso..."
                 rows={2}
                 className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -155,6 +179,7 @@ export function CreateResearchDialog({
               </Label>
               <Input
                 name="tags"
+                defaultValue={editingItem?.tags?.join(", ") || ""}
                 placeholder="RLM, Deep Agent, Benchmark, ..."
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -183,7 +208,7 @@ export function CreateResearchDialog({
                 disabled={loading}
                 className="flex-1 h-10 text-sm bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear entry"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isEditing ? "Guardar cambios" : "Crear entry"}
               </Button>
             </div>
           </form>

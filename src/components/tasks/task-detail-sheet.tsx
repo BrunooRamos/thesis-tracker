@@ -18,8 +18,8 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen, Scale } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
@@ -62,7 +62,7 @@ export function TaskDetailSheet({
 
   if (!task) return null;
 
-  const assigneeName = task.assignee?.name || users.find((u) => u.id === task.assigneeId)?.name || "Sin asignar";
+  const assigneeNames = task.assignees.length > 0 ? task.assignees.map(a => a.name).join(", ") : "Sin asignar";
   const phaseName = task.phase
     ? `F${task.phase.number}: ${task.phase.name}`
     : phases.find((p) => p.id === task.phaseId)
@@ -75,6 +75,23 @@ export function TaskDetailSheet({
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ [field]: value }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      onUpdated(updated);
+    }
+  }
+
+  async function handleAssigneesChange(userId: string) {
+    if (!task) return;
+    const currentIds = task.assignees.map(a => a.id);
+    const newIds = currentIds.includes(userId)
+      ? currentIds.filter(id => id !== userId)
+      : [...currentIds, userId];
+    const res = await fetch(`/api/tasks/${task.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assigneeIds: newIds }),
     });
     if (res.ok) {
       const updated = await res.json();
@@ -173,30 +190,26 @@ export function TaskDetailSheet({
               </div>
             </div>
 
-            {/* Assignee & Phase */}
+            {/* Assignees & Phase */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-1.5">
-                  Asignado a
+                  Asignados
                 </label>
-                <Select
-                  value={task.assigneeId || "none"}
-                  onValueChange={(v) =>
-                    handleFieldChange("assigneeId", v === "none" ? null : v)
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue>{assigneeName}</SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Sin asignar</SelectItem>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>
-                        {u.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-1 rounded-lg border border-[#d3cfc6] bg-white p-1.5 max-h-[140px] overflow-y-auto">
+                  {users.map(u => (
+                    <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#e9e7df]/50 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={task.assignees.some(a => a.id === u.id)}
+                        onChange={() => handleAssigneesChange(u.id)}
+                        className="rounded border-[#d3cfc6]"
+                      />
+                      <UserAvatar user={u} size="xs" />
+                      <span className="text-xs text-[#383c48]">{u.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div>
                 <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-1.5">
@@ -347,11 +360,7 @@ export function TaskDetailSheet({
               <div className="space-y-3 mb-4">
                 {task.comments.map((c) => (
                   <div key={c.id} className="flex gap-2.5">
-                    <Avatar className="w-6 h-6 shrink-0">
-                      <AvatarFallback className="bg-[#e9e7df] text-[10px] text-[#535766]">
-                        {c.user.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar user={c.user} size="sm" />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-[11px] font-medium text-[#383c48]">

@@ -22,7 +22,7 @@ import {
 import { Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { createDecision } from "@/app/(app)/decisions/actions";
+import { createDecision, updateDecision } from "@/app/(app)/decisions/actions";
 import type { DecisionWithRelations } from "./decision-log";
 import type { MeetingNote, ResearchEntry, Experiment, User } from "@/types";
 
@@ -33,6 +33,7 @@ export function CreateDecisionDrawer({
   meetings,
   researchEntries,
   experiments,
+  editingItem,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -40,17 +41,34 @@ export function CreateDecisionDrawer({
   meetings: MeetingNote[];
   researchEntries: (ResearchEntry & { user: User })[];
   experiments: Experiment[];
+  editingItem?: DecisionWithRelations | null;
 }) {
+  const isEditing = !!editingItem;
   const [loading, setLoading] = useState(false);
-  const [title, setTitle] = useState("");
-  const [context, setContext] = useState("");
-  const [decision, setDecision] = useState("");
-  const [rationale, setRationale] = useState("");
-  const [alternatives, setAlternatives] = useState("");
-  const [impact, setImpact] = useState("");
-  const [meetingNoteId, setMeetingNoteId] = useState("");
-  const [researchEntryId, setResearchEntryId] = useState("");
-  const [experimentId, setExperimentId] = useState("");
+  const [title, setTitle] = useState(editingItem?.title || "");
+  const [context, setContext] = useState(editingItem?.context || "");
+  const [decision, setDecision] = useState(editingItem?.decision || "");
+  const [rationale, setRationale] = useState(editingItem?.rationale || "");
+  const [alternatives, setAlternatives] = useState(editingItem?.alternatives || "");
+  const [impact, setImpact] = useState(editingItem?.impact || "");
+  const [meetingNoteId, setMeetingNoteId] = useState(editingItem?.meetingNoteId || "");
+  const [researchEntryId, setResearchEntryId] = useState(editingItem?.researchEntryId || "");
+  const [experimentId, setExperimentId] = useState(editingItem?.experimentId || "");
+
+  // Re-sync when editingItem changes
+  const [prevEditId, setPrevEditId] = useState(editingItem?.id);
+  if (editingItem && editingItem.id !== prevEditId) {
+    setPrevEditId(editingItem.id);
+    setTitle(editingItem.title);
+    setContext(editingItem.context);
+    setDecision(editingItem.decision);
+    setRationale(editingItem.rationale);
+    setAlternatives(editingItem.alternatives || "");
+    setImpact(editingItem.impact || "");
+    setMeetingNoteId(editingItem.meetingNoteId || "");
+    setResearchEntryId(editingItem.researchEntryId || "");
+    setExperimentId(editingItem.experimentId || "");
+  }
 
   function resetForm() {
     setTitle("");
@@ -68,26 +86,44 @@ export function CreateDecisionDrawer({
     e.preventDefault();
     setLoading(true);
     try {
-      const formData = new FormData();
-      formData.set("title", title);
-      formData.set("context", context);
-      formData.set("decision", decision);
-      formData.set("rationale", rationale);
-      if (alternatives) formData.set("alternatives", alternatives);
-      if (impact) formData.set("impact", impact);
-      if (meetingNoteId) formData.set("meetingNoteId", meetingNoteId);
-      if (researchEntryId) formData.set("researchEntryId", researchEntryId);
-      if (experimentId) formData.set("experimentId", experimentId);
-
-      const created = await createDecision(formData);
-      // Fetch full decision with relations
-      const res = await fetch(`/api/decisions/${created.id}`);
-      if (res.ok) {
-        const full = await res.json();
-        onCreated(full);
-        resetForm();
+      if (isEditing && editingItem) {
+        await updateDecision(editingItem.id, {
+          title,
+          context,
+          decision,
+          rationale,
+          alternatives: alternatives || null,
+          impact: impact || null,
+          meetingNoteId: meetingNoteId || null,
+          researchEntryId: researchEntryId || null,
+          experimentId: experimentId || null,
+        });
+        const res = await fetch(`/api/decisions/${editingItem.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+        }
       } else {
-        onOpenChange(false);
+        const formData = new FormData();
+        formData.set("title", title);
+        formData.set("context", context);
+        formData.set("decision", decision);
+        formData.set("rationale", rationale);
+        if (alternatives) formData.set("alternatives", alternatives);
+        if (impact) formData.set("impact", impact);
+        if (meetingNoteId) formData.set("meetingNoteId", meetingNoteId);
+        if (researchEntryId) formData.set("researchEntryId", researchEntryId);
+        if (experimentId) formData.set("experimentId", experimentId);
+
+        const created = await createDecision(formData);
+        const res = await fetch(`/api/decisions/${created.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+          resetForm();
+        } else {
+          onOpenChange(false);
+        }
       }
     } catch {
       // Error handling
@@ -101,7 +137,7 @@ export function CreateDecisionDrawer({
       <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-lg p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <SheetTitle className="text-[#1a1c24] text-base font-semibold">
-            Nueva decision
+            {isEditing ? "Editar decision" : "Nueva decision"}
           </SheetTitle>
         </SheetHeader>
 
@@ -267,7 +303,7 @@ export function CreateDecisionDrawer({
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                Registrar decision
+                {isEditing ? "Guardar cambios" : "Registrar decision"}
               </Button>
             </div>
           </form>

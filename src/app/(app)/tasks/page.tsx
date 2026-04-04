@@ -1,11 +1,13 @@
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/lib/auth";
 import { TaskBoard } from "@/components/tasks/task-board";
 
 export default async function TasksPage() {
+  const session = await auth();
   const [tasks, users, phases, tags] = await Promise.all([
     prisma.task.findMany({
       include: {
-        assignee: true,
+        assignees: true,
         creator: true,
         tags: true,
         phase: true,
@@ -28,6 +30,7 @@ export default async function TasksPage() {
         users={JSON.parse(JSON.stringify(users))}
         phases={JSON.parse(JSON.stringify(phases))}
         tags={JSON.parse(JSON.stringify(tags))}
+        currentUserId={session?.user?.id || ""}
       />
     </div>
   );

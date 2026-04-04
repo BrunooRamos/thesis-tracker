@@ -28,6 +28,7 @@ import {
   Camera,
 } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
 import {
   updatePhase,
@@ -423,23 +424,10 @@ function UserRow({ user }: { user: User }) {
     }
   }
 
-  const avatarColors = ["from-[#ff7c11] to-[#ff9a3e]", "from-[#9a4a00] to-[#ff7c11]", "from-[#1a1c24] to-[#383c48]"];
-  const idx = user.name === "Bruno" ? 0 : user.name === "Rodrigo" ? 1 : 2;
-
   return (
     <div className="flex items-center gap-3 px-3 py-3 rounded-xl hover:bg-[#e9e7df]/30 transition-colors">
       <div className="relative group">
-        {avatarUrl ? (
-          <img
-            src={getFileViewUrl(avatarUrl)}
-            alt={user.name}
-            className="w-8 h-8 rounded-full object-cover"
-          />
-        ) : (
-          <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${avatarColors[idx % 3]} flex items-center justify-center text-[11px] text-white font-semibold`}>
-            {user.name[0]}
-          </div>
-        )}
+        <UserAvatar user={{ ...user, avatar: avatarUrl || user.avatar }} size="sm" className="!w-8 !h-8 !text-[11px]" />
         <label className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
           {uploading ? (
             <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />

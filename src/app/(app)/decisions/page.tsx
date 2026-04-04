@@ -10,7 +10,7 @@ export default async function DecisionsPage() {
           meetingNote: true,
           researchEntry: { include: { user: true } },
           experiment: true,
-          tasks: { include: { assignee: true } },
+          tasks: { include: { assignees: true } },
           comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
         },
         orderBy: { createdAt: "desc" },

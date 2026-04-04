@@ -32,7 +32,7 @@ export type ResearchEntryWithRelations = ResearchEntry & {
   user: User;
   comments: (Comment & { user: User })[];
   resource?: Resource | null;
-  tasks?: (Task & { assignee: User | null })[];
+  tasks?: (Task & { assignees: User[] })[];
   decisions?: (Decision & { madeBy: User })[];
 };
 

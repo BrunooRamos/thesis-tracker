@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, FlaskConical } from "lucide-react";
-import { createExperiment } from "@/app/(app)/experiments/actions";
+import { createExperiment, updateExperiment } from "@/app/(app)/experiments/actions";
 import type { ExperimentWithRelations } from "./experiment-lab";
 
 const ARCHITECTURES = ["RLM", "Deep Agent", "ReAct", "RAG", "CoT", "Custom"];
@@ -29,11 +29,14 @@ export function CreateExperimentDrawer({
   open,
   onOpenChange,
   onCreated,
+  editingItem,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (experiment: ExperimentWithRelations) => void;
+  editingItem?: ExperimentWithRelations | null;
 }) {
+  const isEditing = !!editingItem;
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -41,13 +44,34 @@ export function CreateExperimentDrawer({
     setLoading(true);
     const formData = new FormData(e.currentTarget);
     try {
-      const experiment = await createExperiment(formData);
-      const res = await fetch(`/api/experiments/${experiment.id}`);
-      if (res.ok) {
-        const full = await res.json();
-        onCreated(full);
+      if (isEditing && editingItem) {
+        const configRaw = formData.get("configuration") as string | null;
+        let configuration: unknown = undefined;
+        if (configRaw) {
+          try { configuration = JSON.parse(configRaw); } catch { configuration = undefined; }
+        }
+        await updateExperiment(editingItem.id, {
+          name: formData.get("name") as string,
+          hypothesis: (formData.get("hypothesis") as string) || null,
+          architecture: formData.get("architecture") as string,
+          status: formData.get("status") as "PLANNED" | "RUNNING" | "COMPLETED" | "FAILED",
+          dataset: (formData.get("dataset") as string) || null,
+          ...(configuration !== undefined ? { configuration: configuration as Record<string, unknown> } : {}),
+        } as Parameters<typeof updateExperiment>[1]);
+        const res = await fetch(`/api/experiments/${editingItem.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+        }
       } else {
-        onOpenChange(false);
+        const experiment = await createExperiment(formData);
+        const res = await fetch(`/api/experiments/${experiment.id}`);
+        if (res.ok) {
+          const full = await res.json();
+          onCreated(full);
+        } else {
+          onOpenChange(false);
+        }
       }
     } catch {
       // Error handling
@@ -65,7 +89,7 @@ export function CreateExperimentDrawer({
               <FlaskConical className="w-4 h-4 text-[#ff7c11]" />
             </div>
             <SheetTitle className="text-[#1a1c24] text-sm font-semibold">
-              Nuevo Experimento
+              {isEditing ? "Editar Experimento" : "Nuevo Experimento"}
             </SheetTitle>
           </div>
         </SheetHeader>
@@ -77,6 +101,7 @@ export function CreateExperimentDrawer({
               <Input
                 name="name"
                 required
+                defaultValue={editingItem?.name || ""}
                 placeholder="Nombre del experimento"
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -86,6 +111,7 @@ export function CreateExperimentDrawer({
               <Label className="text-[#535766] text-xs font-medium">Hipotesis</Label>
               <Textarea
                 name="hypothesis"
+                defaultValue={editingItem?.hypothesis || ""}
                 placeholder="Describe la hipotesis del experimento..."
                 rows={3}
                 className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -95,7 +121,7 @@ export function CreateExperimentDrawer({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Arquitectura *</Label>
-                <Select name="architecture" required defaultValue="RAG">
+                <Select name="architecture" required defaultValue={editingItem?.architecture || "RAG"}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
@@ -108,7 +134,7 @@ export function CreateExperimentDrawer({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Estado</Label>
-                <Select name="status" defaultValue="PLANNED">
+                <Select name="status" defaultValue={editingItem?.status || "PLANNED"}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -126,6 +152,7 @@ export function CreateExperimentDrawer({
               <Label className="text-[#535766] text-xs font-medium">Configuracion (JSON)</Label>
               <Textarea
                 name="configuration"
+                defaultValue={editingItem?.configuration ? JSON.stringify(editingItem.configuration, null, 2) : ""}
                 placeholder='{"model": "gpt-4", "temperature": 0.7}'
                 rows={4}
                 className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none font-mono text-xs focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -136,6 +163,7 @@ export function CreateExperimentDrawer({
               <Label className="text-[#535766] text-xs font-medium">Dataset</Label>
               <Input
                 name="dataset"
+                defaultValue={editingItem?.dataset || ""}
                 placeholder="Nombre o ruta del dataset"
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
@@ -155,7 +183,7 @@ export function CreateExperimentDrawer({
                 disabled={loading}
                 className="flex-1 h-10 text-sm bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full"
               >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear experimento"}
+                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isEditing ? "Guardar cambios" : "Crear experimento"}
               </Button>
             </div>
           </form>

@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { Loader2, Plus } from "lucide-react";
 import { createTask } from "@/app/(app)/tasks/actions";
 import type { User, Phase, Tag } from "@/types";
@@ -43,7 +44,7 @@ export function CreateTaskDialog({
   const [error, setError] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [priority, setPriority] = useState("MEDIUM");
   const [phaseId, setPhaseId] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -52,7 +53,7 @@ export function CreateTaskDialog({
   function resetForm() {
     setTitle("");
     setDescription("");
-    setAssigneeId("");
+    setAssigneeIds([]);
     setPriority("MEDIUM");
     setPhaseId("");
     setDueDate("");
@@ -68,7 +69,7 @@ export function CreateTaskDialog({
     const formData = new FormData();
     formData.set("title", title);
     if (description) formData.set("description", description);
-    if (assigneeId) formData.set("assigneeId", assigneeId);
+    if (assigneeIds.length > 0) formData.set("assigneeIds", assigneeIds.join(","));
     formData.set("priority", priority);
     if (phaseId) formData.set("phaseId", phaseId);
     if (dueDate) formData.set("dueDate", dueDate);
@@ -93,8 +94,13 @@ export function CreateTaskDialog({
     }
   }
 
-  const selectedUser = users.find((u) => u.id === assigneeId);
   const selectedPhase = phases.find((p) => p.id === phaseId);
+
+  function toggleAssignee(userId: string) {
+    setAssigneeIds(prev =>
+      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
+    );
+  }
   const priorityLabels: Record<string, string> = {
     LOW: "Baja",
     MEDIUM: "Media",
@@ -146,18 +152,15 @@ export function CreateTaskDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Asignar a</Label>
-                <Select value={assigneeId || undefined} onValueChange={(v) => setAssigneeId(v ?? "")}>
-                  <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
-                    <SelectValue placeholder="Sin asignar">
-                      {selectedUser?.name || "Sin asignar"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {users.map((u) => (
-                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="space-y-1 rounded-lg border border-[#d3cfc6] bg-white p-1.5 max-h-[120px] overflow-y-auto">
+                  {users.map(u => (
+                    <label key={u.id} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-[#e9e7df]/50 cursor-pointer">
+                      <input type="checkbox" checked={assigneeIds.includes(u.id)} onChange={() => toggleAssignee(u.id)} className="rounded border-[#d3cfc6]" />
+                      <UserAvatar user={u} size="xs" />
+                      <span className="text-xs text-[#383c48]">{u.name}</span>
+                    </label>
+                  ))}
+                </div>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Prioridad</Label>

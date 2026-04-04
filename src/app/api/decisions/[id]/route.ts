@@ -20,7 +20,7 @@ export async function GET(
       meetingNote: true,
       researchEntry: { include: { user: true } },
       experiment: true,
-      tasks: { include: { assignee: true } },
+      tasks: { include: { assignees: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });
@@ -72,7 +72,7 @@ export async function PATCH(
       meetingNote: true,
       researchEntry: { include: { user: true } },
       experiment: true,
-      tasks: { include: { assignee: true } },
+      tasks: { include: { assignees: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });

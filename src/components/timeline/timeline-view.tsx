@@ -21,7 +21,7 @@ import type {
 } from "@/types";
 
 type PhaseWithMilestones = Phase & { milestones: Milestone[] };
-type TaskWithUser = Task & { assignee: User | null };
+type TaskWithUser = Task & { assignees: User[] };
 type ResearchWithUser = ResearchEntry & { user: User };
 type ExperimentWithUser = Experiment & { user: User };
 type MeetingWithAuthor = MeetingNote & { author: User };
@@ -243,7 +243,7 @@ export function TimelineView({ phases, tasks, research, experiments, meetings, d
                               <div key={t.id} className="flex items-center gap-2 py-1 px-2 rounded-lg hover:bg-[#e9e7df]/40 transition-colors">
                                 <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", statusColors[t.status])} />
                                 <span className="text-[11px] text-[#1a1c24] truncate flex-1">{t.title}</span>
-                                {t.assignee && <span className="text-[9px] text-[#535766] shrink-0">{t.assignee.name}</span>}
+                                {t.assignees.length > 0 && <span className="text-[9px] text-[#535766] shrink-0">{t.assignees.map(a => a.name).join(", ")}</span>}
                                 <span className="text-[9px] text-[#535766]/50 shrink-0 font-mono">
                                   {t.dueDate ? format(new Date(t.dueDate), "dd/MM") : format(new Date(t.createdAt), "dd/MM")}
                                 </span>

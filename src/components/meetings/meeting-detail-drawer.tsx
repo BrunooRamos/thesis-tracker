@@ -11,8 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { getFileViewUrl } from "@/lib/file-url";
 import {
   Trash2,
@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Loader2,
   Scale,
+  Pencil,
 } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
@@ -54,12 +55,14 @@ export function MeetingDetailDrawer({
   users,
   onUpdated,
   onDeleted,
+  onEdit,
 }: {
   meeting: MeetingNoteWithAuthor | null;
   onClose: () => void;
   users: User[];
   onUpdated: (meeting: MeetingNoteWithAuthor) => void;
   onDeleted: (id: string) => void;
+  onEdit?: (meeting: MeetingNoteWithAuthor) => void;
 }) {
   const [convertedItems, setConvertedItems] = useState<Set<number>>(new Set());
   const [convertingIndex, setConvertingIndex] = useState<number | null>(null);
@@ -134,14 +137,26 @@ export function MeetingDetailDrawer({
                 </span>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDelete}
-              className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              {onEdit && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { onClose(); onEdit(meeting); }}
+                  className="text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/10 -mt-1"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleDelete}
+                className="text-[#535766] hover:text-red-400 hover:bg-red-400/10 -mt-1"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </Button>
+            </div>
           </div>
         </SheetHeader>
 
@@ -159,11 +174,7 @@ export function MeetingDetailDrawer({
                       key={i}
                       className="inline-flex items-center gap-1.5 bg-white border border-[#d3cfc6]/40 rounded-full px-2.5 py-1"
                     >
-                      <Avatar className="w-4 h-4">
-                        <AvatarFallback className="bg-[#e9e7df]/80 text-[8px] text-[#535766]">
-                          {a[0]}
-                        </AvatarFallback>
-                      </Avatar>
+                      <UserAvatar user={{ name: a }} size="xs" className="!w-4 !h-4 !text-[8px]" />
                       <span className="text-[11px] text-[#383c48]">{a}</span>
                     </span>
                   ))}

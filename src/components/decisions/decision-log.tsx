@@ -5,7 +5,7 @@ import { Plus, Search, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreateDecisionDrawer } from "./create-decision-drawer";
@@ -28,7 +28,7 @@ export type DecisionWithRelations = Decision & {
   meetingNote?: MeetingNote | null;
   researchEntry?: (ResearchEntry & { user: User }) | null;
   experiment?: Experiment | null;
-  tasks: (Task & { assignee: User | null })[];
+  tasks: (Task & { assignees: User[] })[];
   comments: (Comment & { user: User })[];
 };
 
@@ -187,11 +187,7 @@ export function DecisionLog({
 
                 <div className="flex flex-col items-end gap-1.5 shrink-0">
                   <div className="flex items-center gap-1.5">
-                    <Avatar className="w-5 h-5">
-                      <AvatarFallback className="bg-[#e9e7df]/80 text-[9px] text-[#535766]">
-                        {d.madeBy.name[0]}
-                      </AvatarFallback>
-                    </Avatar>
+                    <UserAvatar user={d.madeBy} size="xs" />
                     <span className="text-[10px] text-[#535766]">{d.madeBy.name}</span>
                   </div>
                   <span className="text-[10px] text-[#535766]/60">
