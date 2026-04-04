@@ -44,7 +44,7 @@ export async function createResearchEntry(formData: FormData) {
   await logActivity("added_research", "research", entry.id, entry.title);
   revalidatePath("/research");
   revalidatePath("/");
-  return entry;
+  return JSON.parse(JSON.stringify(entry));
 }
 
 export async function updateResearchEntry(
@@ -105,5 +105,5 @@ export async function addResearchComment(entryId: string, content: string) {
   }
 
   revalidatePath("/research");
-  return comment;
+  return JSON.parse(JSON.stringify(comment));
 }

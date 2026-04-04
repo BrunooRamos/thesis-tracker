@@ -40,26 +40,67 @@ export function CreateTaskDialog({
   onCreated: (task: TaskWithRelations) => void;
 }) {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [assigneeId, setAssigneeId] = useState("");
+  const [priority, setPriority] = useState("MEDIUM");
+  const [phaseId, setPhaseId] = useState("");
+  const [dueDate, setDueDate] = useState("");
+  const [wbsCode, setWbsCode] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function resetForm() {
+    setTitle("");
+    setDescription("");
+    setAssigneeId("");
+    setPriority("MEDIUM");
+    setPhaseId("");
+    setDueDate("");
+    setWbsCode("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (!title.trim()) return;
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
+    setError("");
+
+    const formData = new FormData();
+    formData.set("title", title);
+    if (description) formData.set("description", description);
+    if (assigneeId) formData.set("assigneeId", assigneeId);
+    formData.set("priority", priority);
+    if (phaseId) formData.set("phaseId", phaseId);
+    if (dueDate) formData.set("dueDate", dueDate);
+    if (wbsCode) formData.set("wbsCode", wbsCode);
+
     try {
       const task = await createTask(formData);
       const res = await fetch(`/api/tasks/${task.id}`);
       if (res.ok) {
         const fullTask = await res.json();
         onCreated(fullTask);
+        resetForm();
       } else {
-        onOpenChange(false);
+        setError("Error al obtener la tarea creada");
       }
-    } catch {
-      // Error handling
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Error al crear la tarea";
+      setError(msg);
+      console.error("Error creating task:", err);
     } finally {
       setLoading(false);
     }
   }
+
+  const selectedUser = users.find((u) => u.id === assigneeId);
+  const selectedPhase = phases.find((p) => p.id === phaseId);
+  const priorityLabels: Record<string, string> = {
+    LOW: "Baja",
+    MEDIUM: "Media",
+    HIGH: "Alta",
+    URGENT: "Urgente",
+  };
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -80,7 +121,8 @@ export function CreateTaskDialog({
             <div className="space-y-1.5">
               <Label className="text-[#535766] text-xs font-medium">Título *</Label>
               <Input
-                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="Nombre de la tarea"
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -90,7 +132,8 @@ export function CreateTaskDialog({
             <div className="space-y-1.5">
               <Label className="text-[#535766] text-xs font-medium">Descripción</Label>
               <Textarea
-                name="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
                 placeholder="Descripción opcional..."
                 rows={3}
                 className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
@@ -100,9 +143,11 @@ export function CreateTaskDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Asignar a</Label>
-                <Select name="assigneeId">
+                <Select value={assigneeId || undefined} onValueChange={(v) => setAssigneeId(v ?? "")}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
-                    <SelectValue placeholder="Sin asignar" />
+                    <SelectValue placeholder="Sin asignar">
+                      {selectedUser?.name || "Sin asignar"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {users.map((u) => (
@@ -113,9 +158,11 @@ export function CreateTaskDialog({
               </div>
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Prioridad</Label>
-                <Select name="priority" defaultValue="MEDIUM">
+                <Select value={priority} onValueChange={(v) => setPriority(v ?? "MEDIUM")}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
-                    <SelectValue />
+                    <SelectValue>
+                      {priorityLabels[priority]}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LOW">Baja</SelectItem>
@@ -130,9 +177,11 @@ export function CreateTaskDialog({
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-[#535766] text-xs font-medium">Fase</Label>
-                <Select name="phaseId">
+                <Select value={phaseId || undefined} onValueChange={(v) => setPhaseId(v ?? "")}>
                   <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
-                    <SelectValue placeholder="Sin fase" />
+                    <SelectValue placeholder="Sin fase">
+                      {selectedPhase ? `F${selectedPhase.number}: ${selectedPhase.name}` : "Sin fase"}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {phases.map((p) => (
@@ -145,7 +194,8 @@ export function CreateTaskDialog({
                 <Label className="text-[#535766] text-xs font-medium">Fecha límite</Label>
                 <Input
                   type="date"
-                  name="dueDate"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
                   className="h-10 bg-white border-[#d3cfc6] text-[#383c48] text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
                 />
               </div>
@@ -154,24 +204,29 @@ export function CreateTaskDialog({
             <div className="space-y-1.5">
               <Label className="text-[#535766] text-xs font-medium">Código WBS</Label>
               <Input
-                name="wbsCode"
+                value={wbsCode}
+                onChange={(e) => setWbsCode(e.target.value)}
                 placeholder="ej: 1.2.3"
                 className="h-10 bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
             </div>
 
+            {error && (
+              <p className="text-red-500 text-xs bg-red-50 rounded-lg px-3 py-2">{error}</p>
+            )}
+
             <div className="flex gap-2 pt-3 border-t border-[#d3cfc6]/40">
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={() => { resetForm(); onOpenChange(false); }}
                 className="flex-1 h-10 text-sm border-[#d3cfc6] text-[#535766] hover:bg-[#e9e7df]/50"
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !title.trim()}
                 className="flex-1 h-10 text-sm bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Crear tarea"}

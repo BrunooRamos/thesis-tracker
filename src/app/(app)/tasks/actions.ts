@@ -10,6 +10,12 @@ export async function createTask(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) throw new Error("Unauthorized");
 
+  // Verify user exists in DB (session might have stale ID after reseed)
+  const dbUser = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!dbUser) {
+    throw new Error("Tu sesión expiró. Cerrá sesión y volvé a ingresar.");
+  }
+
   const title = formData.get("title") as string;
   const assigneeId = formData.get("assigneeId") as string | null;
   const phaseId = formData.get("phaseId") as string | null;
@@ -36,7 +42,8 @@ export async function createTask(formData: FormData) {
   await logActivity("created_task", "task", task.id, task.title);
   revalidatePath("/tasks");
   revalidatePath("/");
-  return task;
+  // Return plain serializable object
+  return JSON.parse(JSON.stringify(task)) as { id: string; title: string };
 }
 
 export async function updateTaskStatus(taskId: string, status: TaskStatus) {
@@ -120,5 +127,5 @@ export async function addTaskComment(taskId: string, content: string) {
   }
 
   revalidatePath("/tasks");
-  return comment;
+  return JSON.parse(JSON.stringify(comment));
 }
