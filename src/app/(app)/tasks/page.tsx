@@ -11,6 +11,7 @@ export default async function TasksPage() {
         phase: true,
         resource: true,
         researchEntry: { include: { user: true } },
+        decision: true,
         comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
       },
       orderBy: { createdAt: "desc" },

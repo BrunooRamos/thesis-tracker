@@ -17,6 +17,9 @@ export async function createDecision(formData: FormData) {
   const alternatives = formData.get("alternatives") as string | null;
   const impact = formData.get("impact") as string | null;
   const status = (formData.get("status") as DecisionStatus) || "PROPOSED";
+  const meetingNoteId = formData.get("meetingNoteId") as string | null;
+  const researchEntryId = formData.get("researchEntryId") as string | null;
+  const experimentId = formData.get("experimentId") as string | null;
 
   const record = await prisma.decision.create({
     data: {
@@ -28,13 +31,16 @@ export async function createDecision(formData: FormData) {
       impact: impact || undefined,
       status,
       madeById: session.user.id!,
+      meetingNoteId: meetingNoteId || undefined,
+      researchEntryId: researchEntryId || undefined,
+      experimentId: experimentId || undefined,
     },
   });
 
   await logActivity("created_decision", "decision", record.id, record.title);
   revalidatePath("/decisions");
   revalidatePath("/");
-  return record;
+  return JSON.parse(JSON.stringify(record));
 }
 
 export async function updateDecision(
@@ -47,6 +53,9 @@ export async function updateDecision(
     alternatives?: string | null;
     impact?: string | null;
     status?: DecisionStatus;
+    meetingNoteId?: string | null;
+    researchEntryId?: string | null;
+    experimentId?: string | null;
   }
 ) {
   const session = await auth();
@@ -60,7 +69,7 @@ export async function updateDecision(
   await logActivity("updated_decision", "decision", record.id, record.title);
   revalidatePath("/decisions");
   revalidatePath("/");
-  return record;
+  return JSON.parse(JSON.stringify(record));
 }
 
 export async function deleteDecision(id: string) {
@@ -95,5 +104,36 @@ export async function addDecisionComment(decisionId: string, content: string) {
   }
 
   revalidatePath("/decisions");
-  return comment;
+  return JSON.parse(JSON.stringify(comment));
+}
+
+export async function createTaskFromDecision(
+  decisionId: string,
+  data: { title: string; assigneeId?: string; dueDate?: string }
+) {
+  const session = await auth();
+  if (!session?.user?.id) throw new Error("Unauthorized");
+
+  const decision = await prisma.decision.findUnique({ where: { id: decisionId } });
+  if (!decision) throw new Error("Decision not found");
+
+  const description = `> Decisión: **${decision.title}**\n\n${decision.decision}`;
+
+  const task = await prisma.task.create({
+    data: {
+      title: data.title,
+      description,
+      creatorId: session.user.id!,
+      assigneeId: data.assigneeId || undefined,
+      dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
+      decisionId,
+    },
+    include: { assignee: true },
+  });
+
+  await logActivity("created_task", "task", task.id, task.title);
+  revalidatePath("/decisions");
+  revalidatePath("/tasks");
+  revalidatePath("/");
+  return JSON.parse(JSON.stringify(task));
 }

@@ -22,6 +22,7 @@ import {
   Wrench,
   Video,
   HelpCircle,
+  Scale,
 } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
@@ -198,6 +199,35 @@ export function ResearchDetailSheet({
                       <span className="text-[#1a1c24] truncate">{t.title}</span>
                       {t.assignee && (
                         <span className="text-[9px] text-[#535766] ml-auto shrink-0">{t.assignee.name}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Linked Decisions */}
+            {entry.decisions && entry.decisions.length > 0 && (
+              <div className="rounded-xl bg-amber-50/60 border border-amber-200/60 p-3">
+                <label className="text-[9px] text-amber-600 uppercase tracking-wider font-semibold block mb-1.5">
+                  Decisiones vinculadas ({entry.decisions.length})
+                </label>
+                <div className="space-y-1.5">
+                  {entry.decisions.map((d) => (
+                    <div key={d.id} className="flex items-center gap-2 text-xs">
+                      <Scale className="w-3 h-3 text-amber-600 shrink-0" />
+                      <span className="text-[11px] text-[#1a1c24] truncate">{d.title}</span>
+                      <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0 ${
+                        d.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-700" :
+                        d.status === "REVISITED" ? "bg-orange-100 text-orange-700" :
+                        "bg-amber-100 text-amber-700"
+                      }`}>
+                        {d.status}
+                      </span>
+                      {d.madeBy && (
+                        <span className="text-[9px] text-[#535766] ml-auto shrink-0">
+                          {d.madeBy.name}
+                        </span>
                       )}
                     </div>
                   ))}

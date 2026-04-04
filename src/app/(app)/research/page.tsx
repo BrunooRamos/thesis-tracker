@@ -7,6 +7,7 @@ export default async function ResearchPage() {
       user: true,
       resource: true,
       tasks: { include: { assignee: true } },
+      decisions: { include: { madeBy: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
     orderBy: { createdAt: "desc" },

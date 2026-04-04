@@ -22,6 +22,7 @@ export async function GET(
       phase: true,
       resource: true,
       researchEntry: true,
+      decision: true,
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });
@@ -56,6 +57,7 @@ export async function PATCH(
     "wbsCode",
     "resourceId",
     "researchEntryId",
+    "decisionId",
   ];
 
   for (const field of allowedFields) {
@@ -76,6 +78,9 @@ export async function PATCH(
       creator: true,
       tags: true,
       phase: true,
+      resource: true,
+      researchEntry: { include: { user: true } },
+      decision: true,
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });

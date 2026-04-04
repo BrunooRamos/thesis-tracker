@@ -20,7 +20,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Trash2, Send, GitBranch, FlaskConical } from "lucide-react";
+import { Trash2, Send, GitBranch, FlaskConical, Scale } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteExperiment, addExperimentComment } from "@/app/(app)/experiments/actions";
@@ -290,6 +290,45 @@ export function ExperimentDetailDrawer({
                           {child.status}
                         </span>
                         <span className="text-[10px] font-mono text-[#535766] ml-auto">v{child.iteration}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Decisions */}
+            {experiment.decisions && experiment.decisions.length > 0 && (
+              <>
+                <Separator className="bg-[#e9e7df]/80" />
+                <div>
+                  <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
+                    Decisiones ({experiment.decisions.length})
+                  </label>
+                  <div className="space-y-2">
+                    {experiment.decisions.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-xl bg-amber-50/60 border border-amber-200/60 p-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span className="text-[11px] font-medium text-[#1a1c24] truncate">
+                            {d.title}
+                          </span>
+                          <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0",
+                            d.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-700" :
+                            d.status === "REVISITED" ? "bg-orange-100 text-orange-700" :
+                            "bg-amber-100 text-amber-700"
+                          )}>
+                            {d.status}
+                          </span>
+                        </div>
+                        {d.madeBy && (
+                          <p className="text-[9px] text-[#535766] mt-1 ml-5.5">
+                            por {d.madeBy.name}
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>

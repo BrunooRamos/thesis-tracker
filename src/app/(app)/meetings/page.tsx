@@ -4,7 +4,7 @@ import { MeetingsPage } from "@/components/meetings/meetings-page";
 export default async function MeetingsRoute() {
   const [meetingNotes, users] = await Promise.all([
     prisma.meetingNote.findMany({
-      include: { author: true },
+      include: { author: true, decisions: { include: { madeBy: true } } },
       orderBy: { date: "desc" },
     }),
     prisma.user.findMany(),

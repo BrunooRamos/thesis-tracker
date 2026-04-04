@@ -10,10 +10,11 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreateMeetingDrawer } from "./create-meeting-drawer";
 import { MeetingDetailDrawer } from "./meeting-detail-drawer";
-import type { MeetingNote, User, MeetingType } from "@/types";
+import type { MeetingNote, User, MeetingType, Decision } from "@/types";
 
 export type MeetingNoteWithAuthor = MeetingNote & {
   author: User;
+  decisions?: (Decision & { madeBy: User })[];
 };
 
 const typeFilters = [

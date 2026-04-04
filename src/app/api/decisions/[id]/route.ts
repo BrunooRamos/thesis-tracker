@@ -17,6 +17,10 @@ export async function GET(
     where: { id },
     include: {
       madeBy: true,
+      meetingNote: true,
+      researchEntry: { include: { user: true } },
+      experiment: true,
+      tasks: { include: { assignee: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });
@@ -49,6 +53,9 @@ export async function PATCH(
     "alternatives",
     "impact",
     "status",
+    "meetingNoteId",
+    "researchEntryId",
+    "experimentId",
   ];
 
   for (const field of allowedFields) {
@@ -62,6 +69,10 @@ export async function PATCH(
     data: updateData,
     include: {
       madeBy: true,
+      meetingNote: true,
+      researchEntry: { include: { user: true } },
+      experiment: true,
+      tasks: { include: { assignee: true } },
       comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
     },
   });

@@ -9,6 +9,7 @@ export default async function ExperimentsPage() {
         comments: { include: { user: true }, orderBy: { createdAt: "asc" } },
         childExperiments: true,
         parentExperiment: true,
+        decisions: { include: { madeBy: true } },
       },
       orderBy: { createdAt: "desc" },
     }),

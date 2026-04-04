@@ -22,7 +22,9 @@ import {
   Download,
   ExternalLink,
   Loader2,
+  Scale,
 } from "lucide-react";
+import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
@@ -318,6 +320,71 @@ export function MeetingDetailDrawer({
                       );
                     })}
                   </div>
+                </div>
+              </>
+            )}
+
+            {/* Decisions */}
+            {meeting.decisions && meeting.decisions.length > 0 && (
+              <>
+                <Separator className="bg-[#e9e7df]/80" />
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                      Decisiones ({meeting.decisions.length})
+                    </label>
+                    <Link
+                      href="/decisions"
+                      className="text-[10px] text-amber-600 hover:text-amber-700 font-medium"
+                    >
+                      Registrar en Decision Log →
+                    </Link>
+                  </div>
+                  <div className="space-y-2">
+                    {meeting.decisions.map((d) => (
+                      <div
+                        key={d.id}
+                        className="rounded-xl bg-amber-50/60 border border-amber-200/60 p-3"
+                      >
+                        <div className="flex items-center gap-2">
+                          <Scale className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          <span className="text-[11px] font-medium text-[#1a1c24] truncate">
+                            {d.title}
+                          </span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium shrink-0 ${
+                            d.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-700" :
+                            d.status === "REVISITED" ? "bg-orange-100 text-orange-700" :
+                            "bg-amber-100 text-amber-700"
+                          }`}>
+                            {d.status}
+                          </span>
+                        </div>
+                        {d.madeBy && (
+                          <p className="text-[9px] text-[#535766] mt-1 ml-5.5">
+                            por {d.madeBy.name}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Link to register decision even when none exist */}
+            {(!meeting.decisions || meeting.decisions.length === 0) && (
+              <>
+                <Separator className="bg-[#e9e7df]/80" />
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                    Decisiones
+                  </label>
+                  <Link
+                    href="/decisions"
+                    className="text-[10px] text-amber-600 hover:text-amber-700 font-medium"
+                  >
+                    Registrar en Decision Log →
+                  </Link>
                 </div>
               </>
             )}

@@ -10,10 +10,25 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CreateDecisionDrawer } from "./create-decision-drawer";
 import { DecisionDetailDrawer } from "./decision-detail-drawer";
-import type { Decision, User, Comment, DecisionStatus } from "@/types";
+import type {
+  Decision,
+  User,
+  Comment,
+  DecisionStatus,
+  MeetingNote,
+  ResearchEntry,
+  Experiment,
+  Task,
+  Phase,
+  Tag,
+} from "@/types";
 
 export type DecisionWithRelations = Decision & {
   madeBy: User;
+  meetingNote?: MeetingNote | null;
+  researchEntry?: (ResearchEntry & { user: User }) | null;
+  experiment?: Experiment | null;
+  tasks: (Task & { assignee: User | null })[];
   comments: (Comment & { user: User })[];
 };
 
@@ -39,9 +54,19 @@ const statusLabel: Record<string, string> = {
 export function DecisionLog({
   initialDecisions,
   users,
+  meetings,
+  researchEntries,
+  experiments,
+  phases,
+  tags,
 }: {
   initialDecisions: DecisionWithRelations[];
   users: User[];
+  meetings: MeetingNote[];
+  researchEntries: (ResearchEntry & { user: User })[];
+  experiments: Experiment[];
+  phases: Phase[];
+  tags: Tag[];
 }) {
   const [decisions, setDecisions] = useState(initialDecisions);
   const [statusFilter, setStatusFilter] = useState<"ALL" | DecisionStatus>("ALL");
@@ -190,12 +215,17 @@ export function DecisionLog({
         open={showCreate}
         onOpenChange={setShowCreate}
         onCreated={handleCreated}
+        meetings={meetings}
+        researchEntries={researchEntries}
+        experiments={experiments}
       />
 
       <DecisionDetailDrawer
         decision={selectedDecision}
         onClose={() => setSelectedDecision(null)}
         users={users}
+        phases={phases}
+        tags={tags}
         onUpdated={handleUpdated}
         onDeleted={handleDeleted}
       />

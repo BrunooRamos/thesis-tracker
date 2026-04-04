@@ -12,32 +12,80 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { createDecision } from "@/app/(app)/decisions/actions";
 import type { DecisionWithRelations } from "./decision-log";
+import type { MeetingNote, ResearchEntry, Experiment, User } from "@/types";
 
 export function CreateDecisionDrawer({
   open,
   onOpenChange,
   onCreated,
+  meetings,
+  researchEntries,
+  experiments,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: (decision: DecisionWithRelations) => void;
+  meetings: MeetingNote[];
+  researchEntries: (ResearchEntry & { user: User })[];
+  experiments: Experiment[];
 }) {
   const [loading, setLoading] = useState(false);
+  const [title, setTitle] = useState("");
+  const [context, setContext] = useState("");
+  const [decision, setDecision] = useState("");
+  const [rationale, setRationale] = useState("");
+  const [alternatives, setAlternatives] = useState("");
+  const [impact, setImpact] = useState("");
+  const [meetingNoteId, setMeetingNoteId] = useState("");
+  const [researchEntryId, setResearchEntryId] = useState("");
+  const [experimentId, setExperimentId] = useState("");
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  function resetForm() {
+    setTitle("");
+    setContext("");
+    setDecision("");
+    setRationale("");
+    setAlternatives("");
+    setImpact("");
+    setMeetingNoteId("");
+    setResearchEntryId("");
+    setExperimentId("");
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const formData = new FormData(e.currentTarget);
     try {
-      const decision = await createDecision(formData);
+      const formData = new FormData();
+      formData.set("title", title);
+      formData.set("context", context);
+      formData.set("decision", decision);
+      formData.set("rationale", rationale);
+      if (alternatives) formData.set("alternatives", alternatives);
+      if (impact) formData.set("impact", impact);
+      if (meetingNoteId) formData.set("meetingNoteId", meetingNoteId);
+      if (researchEntryId) formData.set("researchEntryId", researchEntryId);
+      if (experimentId) formData.set("experimentId", experimentId);
+
+      const created = await createDecision(formData);
       // Fetch full decision with relations
-      const res = await fetch(`/api/decisions/${decision.id}`);
+      const res = await fetch(`/api/decisions/${created.id}`);
       if (res.ok) {
         const full = await res.json();
         onCreated(full);
+        resetForm();
       } else {
         onOpenChange(false);
       }
@@ -64,7 +112,8 @@ export function CreateDecisionDrawer({
                 Titulo *
               </Label>
               <Input
-                name="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
                 required
                 placeholder="Nombre de la decision"
                 className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
@@ -76,7 +125,8 @@ export function CreateDecisionDrawer({
                 Contexto *
               </Label>
               <Textarea
-                name="context"
+                value={context}
+                onChange={(e) => setContext(e.target.value)}
                 required
                 rows={3}
                 placeholder="Contexto y circunstancias de la decision..."
@@ -89,7 +139,8 @@ export function CreateDecisionDrawer({
                 Decision *
               </Label>
               <Textarea
-                name="decision"
+                value={decision}
+                onChange={(e) => setDecision(e.target.value)}
                 required
                 rows={3}
                 placeholder="Que se decidio..."
@@ -102,7 +153,8 @@ export function CreateDecisionDrawer({
                 Justificacion *
               </Label>
               <Textarea
-                name="rationale"
+                value={rationale}
+                onChange={(e) => setRationale(e.target.value)}
                 required
                 rows={3}
                 placeholder="Por que se tomo esta decision..."
@@ -115,7 +167,8 @@ export function CreateDecisionDrawer({
                 Alternativas consideradas
               </Label>
               <Textarea
-                name="alternatives"
+                value={alternatives}
+                onChange={(e) => setAlternatives(e.target.value)}
                 rows={2}
                 placeholder="Otras opciones evaluadas..."
                 className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
@@ -127,12 +180,83 @@ export function CreateDecisionDrawer({
                 Impacto
               </Label>
               <Textarea
-                name="impact"
+                value={impact}
+                onChange={(e) => setImpact(e.target.value)}
                 rows={2}
                 placeholder="Impacto esperado de esta decision..."
                 className="mt-1.5 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
               />
             </div>
+
+            {/* Link selects */}
+            {meetings.length > 0 && (
+              <div>
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                  Surgio de reunion
+                </Label>
+                <Select
+                  value={meetingNoteId}
+                  onValueChange={(v) => setMeetingNoteId(v ?? "")}
+                >
+                  <SelectTrigger className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]">
+                    <SelectValue placeholder="Seleccionar reunion..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {meetings.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.title} - {format(new Date(m.date), "d MMM yyyy", { locale: es })}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {researchEntries.length > 0 && (
+              <div>
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                  Basada en research
+                </Label>
+                <Select
+                  value={researchEntryId}
+                  onValueChange={(v) => setResearchEntryId(v ?? "")}
+                >
+                  <SelectTrigger className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]">
+                    <SelectValue placeholder="Seleccionar research..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {researchEntries.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>
+                        {r.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {experiments.length > 0 && (
+              <div>
+                <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                  Basada en experimento
+                </Label>
+                <Select
+                  value={experimentId}
+                  onValueChange={(v) => setExperimentId(v ?? "")}
+                >
+                  <SelectTrigger className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] focus:border-[#ff7c11]">
+                    <SelectValue placeholder="Seleccionar experimento..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {experiments.map((exp) => (
+                      <SelectItem key={exp.id} value={exp.id}>
+                        {exp.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
 
             <div className="pt-2">
               <Button

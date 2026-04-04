@@ -28,13 +28,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { CreateExperimentDrawer } from "./create-experiment-drawer";
 import { ExperimentDetailDrawer } from "./experiment-detail-drawer";
-import type { Experiment, User, Comment } from "@/types";
+import type { Experiment, User, Comment, Decision } from "@/types";
 
 export type ExperimentWithRelations = Experiment & {
   user: User;
   comments: (Comment & { user: User })[];
   childExperiments: Experiment[];
   parentExperiment: Experiment | null;
+  decisions?: (Decision & { madeBy: User })[];
 };
 
 type ViewMode = "cards" | "table";

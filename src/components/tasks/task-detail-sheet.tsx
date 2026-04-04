@@ -20,13 +20,13 @@ import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
-import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen } from "lucide-react";
+import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen, Scale } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteTask, addTaskComment } from "@/app/(app)/tasks/actions";
 import type { TaskWithRelations } from "./task-board";
-import type { User, Phase, Tag } from "@/types";
+import type { User, Phase, Tag, Decision } from "@/types";
 
 const statusLabels: Record<string, string> = {
   TODO: "To Do",
@@ -295,6 +295,30 @@ export function TaskDetailSheet({
                     por {task.researchEntry.user.name}
                   </p>
                 )}
+              </div>
+            )}
+
+            {/* Linked Decision */}
+            {task.decision && (
+              <div className="rounded-xl bg-amber-50/60 border border-amber-200/60 p-3">
+                <label className="text-[9px] text-amber-600 uppercase tracking-wider font-semibold block mb-1.5">
+                  Decision vinculada
+                </label>
+                <div className="flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5 text-amber-600" />
+                  <span className="text-[11px] font-medium text-[#1a1c24]">
+                    {task.decision.title}
+                  </span>
+                </div>
+                <div className="mt-1.5 ml-5.5">
+                  <span className={`px-1.5 py-0.5 rounded text-[9px] font-medium ${
+                    task.decision.status === "ACCEPTED" ? "bg-emerald-100 text-emerald-700" :
+                    task.decision.status === "REVISITED" ? "bg-orange-100 text-orange-700" :
+                    "bg-amber-100 text-amber-700"
+                  }`}>
+                    {task.decision.status}
+                  </span>
+                </div>
               </div>
             )}
 

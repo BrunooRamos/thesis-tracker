@@ -73,6 +73,8 @@ model Task {
   resourceId      String?
   researchEntry   ResearchEntry? @relation("ResearchTask", fields: [researchEntryId], references: [id], onDelete: SetNull)
   researchEntryId String?
+  decision        Decision?      @relation("DecisionTask", fields: [decisionId], references: [id], onDelete: SetNull)
+  decisionId      String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -101,6 +103,7 @@ model ResearchEntry {
   resource    Resource?    @relation("ResourceResearch", fields: [resourceId], references: [id], onDelete: SetNull)
   resourceId  String?
   tasks       Task[]       @relation("ResearchTask")
+  decisions   Decision[]   @relation("ResearchDecision")
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 }
@@ -130,24 +133,34 @@ model Experiment {
   user             User             @relation(fields: [userId], references: [id])
   userId           String
   researchEntries  ResearchEntry[]  @relation("ExperimentResearch")
+  decisions        Decision[]       @relation("ExperimentDecision")
   comments         Comment[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
 
 model Decision {
-  id           String         @id @default(cuid())
-  title        String
-  context      String
-  decision     String
-  rationale    String
-  alternatives String?
-  impact       String?
-  status       DecisionStatus @default(PROPOSED)
-  madeBy       User           @relation(fields: [madeById], references: [id])
-  madeById     String
-  comments     Comment[]
-  createdAt    DateTime       @default(now())
+  id              String          @id @default(cuid())
+  title           String
+  context         String
+  decision        String
+  rationale       String
+  alternatives    String?
+  impact          String?
+  status          DecisionStatus  @default(PROPOSED)
+  madeBy          User            @relation(fields: [madeById], references: [id])
+  madeById        String
+  comments        Comment[]
+  // Links to origin context
+  meetingNote     MeetingNote?    @relation(fields: [meetingNoteId], references: [id], onDelete: SetNull)
+  meetingNoteId   String?
+  researchEntry   ResearchEntry?  @relation("ResearchDecision", fields: [researchEntryId], references: [id], onDelete: SetNull)
+  researchEntryId String?
+  experiment      Experiment?     @relation("ExperimentDecision", fields: [experimentId], references: [id], onDelete: SetNull)
+  experimentId    String?
+  // Tasks spawned from this decision
+  tasks           Task[]          @relation("DecisionTask")
+  createdAt       DateTime        @default(now())
 }
 
 model MeetingNote {
@@ -164,6 +177,7 @@ model MeetingNote {
   transcriptType  String?
   author          User        @relation(fields: [authorId], references: [id])
   authorId        String
+  decisions       Decision[]
   createdAt       DateTime    @default(now())
 }
 
