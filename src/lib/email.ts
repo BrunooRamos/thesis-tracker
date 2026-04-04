@@ -35,7 +35,7 @@ export async function sendTaskAssignmentEmail({
 
   try {
     const result = await resend.emails.send({
-      from: "Horizon Tracker <onboarding@resend.dev>",
+      from: "Horizon Tracker <noreply@horizon-thesis-um.online>",
       to,
       subject: `Nueva tarea asignada: ${taskTitle}`,
       html: `
