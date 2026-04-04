@@ -130,13 +130,16 @@ export function CreateTaskDialog({
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-[#535766] text-xs font-medium">Descripción</Label>
+              <div className="flex items-center justify-between">
+                <Label className="text-[#535766] text-xs font-medium">Descripción</Label>
+                <span className="text-[9px] text-[#535766]/50">Soporta Markdown</span>
+              </div>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Descripción opcional..."
-                rows={3}
-                className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm resize-none focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
+                placeholder={"# Título\n## Subtítulo\n**negrita**, *itálica*\n- lista\n`código`"}
+                rows={5}
+                className="bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/40 text-sm font-mono focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
               />
             </div>
 

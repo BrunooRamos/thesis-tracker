@@ -105,3 +105,101 @@
     @apply font-sans;
   }
 }
+
+/* Markdown rendering */
+.prose-horizon {
+  font-size: 0.8125rem;
+  line-height: 1.7;
+  color: #383c48;
+}
+.prose-horizon h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #1a1c24;
+  margin: 0.75em 0 0.4em;
+  line-height: 1.3;
+}
+.prose-horizon h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1a1c24;
+  margin: 0.6em 0 0.3em;
+  line-height: 1.3;
+}
+.prose-horizon h3 {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1a1c24;
+  margin: 0.5em 0 0.25em;
+}
+.prose-horizon p {
+  margin: 0.4em 0;
+}
+.prose-horizon strong {
+  font-weight: 600;
+  color: #1a1c24;
+}
+.prose-horizon em {
+  font-style: italic;
+}
+.prose-horizon ul, .prose-horizon ol {
+  margin: 0.4em 0;
+  padding-left: 1.5em;
+}
+.prose-horizon ul {
+  list-style-type: disc;
+}
+.prose-horizon ol {
+  list-style-type: decimal;
+}
+.prose-horizon li {
+  margin: 0.15em 0;
+}
+.prose-horizon code {
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 0.75rem;
+  background: #e9e7df;
+  padding: 0.15em 0.35em;
+  border-radius: 0.25rem;
+  color: #9a4a00;
+}
+.prose-horizon pre {
+  background: #1a1c24;
+  color: #e9e7df;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 0.5em 0;
+  font-size: 0.75rem;
+}
+.prose-horizon pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+.prose-horizon blockquote {
+  border-left: 3px solid #ff7c11;
+  padding-left: 0.75em;
+  color: #535766;
+  margin: 0.5em 0;
+  font-style: italic;
+}
+.prose-horizon a {
+  color: #ff7c11;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-horizon a:hover {
+  color: #9a4a00;
+}
+.prose-horizon hr {
+  border: none;
+  border-top: 1px solid #d3cfc6;
+  margin: 0.75em 0;
+}
+.prose-horizon :first-child {
+  margin-top: 0;
+}
+.prose-horizon :last-child {
+  margin-bottom: 0;
+}

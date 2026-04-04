@@ -9,7 +9,6 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -20,12 +19,26 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Markdown } from "@/components/ui/markdown";
 import { Trash2, Send, Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { updateTask, deleteTask, addTaskComment } from "@/app/(app)/tasks/actions";
+import { deleteTask, addTaskComment } from "@/app/(app)/tasks/actions";
 import type { TaskWithRelations } from "./task-board";
 import type { User, Phase, Tag } from "@/types";
+
+const statusLabels: Record<string, string> = {
+  TODO: "To Do",
+  IN_PROGRESS: "In Progress",
+  IN_REVIEW: "In Review",
+  DONE: "Done",
+};
+const priorityLabels: Record<string, string> = {
+  LOW: "Baja",
+  MEDIUM: "Media",
+  HIGH: "Alta",
+  URGENT: "Urgente",
+};
 
 export function TaskDetailSheet({
   task,
@@ -47,6 +60,13 @@ export function TaskDetailSheet({
   const [sendingComment, setSendingComment] = useState(false);
 
   if (!task) return null;
+
+  const assigneeName = task.assignee?.name || users.find((u) => u.id === task.assigneeId)?.name || "Sin asignar";
+  const phaseName = task.phase
+    ? `F${task.phase.number}: ${task.phase.name}`
+    : phases.find((p) => p.id === task.phaseId)
+      ? `F${phases.find((p) => p.id === task.phaseId)!.number}: ${phases.find((p) => p.id === task.phaseId)!.name}`
+      : "Sin fase";
 
   async function handleFieldChange(field: string, value: string | null) {
     if (!task) return;
@@ -73,7 +93,6 @@ export function TaskDetailSheet({
     if (!comment.trim() || !task) return;
     setSendingComment(true);
     await addTaskComment(task.id, comment);
-    // Refetch task
     const res = await fetch(`/api/tasks/${task.id}`);
     if (res.ok) {
       const updated = await res.json();
@@ -110,7 +129,7 @@ export function TaskDetailSheet({
         </SheetHeader>
 
         <ScrollArea className="h-[calc(100vh-100px)]">
-          <div className="px-6 space-y-5 pb-6">
+          <div className="px-6 space-y-5 pb-6 pt-5">
             {/* Status & Priority */}
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -122,7 +141,7 @@ export function TaskDetailSheet({
                   onValueChange={(v) => handleFieldChange("status", v)}
                 >
                   <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue />
+                    <SelectValue>{statusLabels[task.status]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="TODO">To Do</SelectItem>
@@ -141,7 +160,7 @@ export function TaskDetailSheet({
                   onValueChange={(v) => handleFieldChange("priority", v)}
                 >
                   <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue />
+                    <SelectValue>{priorityLabels[task.priority]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="LOW">Baja</SelectItem>
@@ -166,7 +185,7 @@ export function TaskDetailSheet({
                   }
                 >
                   <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue />
+                    <SelectValue>{assigneeName}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin asignar</SelectItem>
@@ -189,7 +208,7 @@ export function TaskDetailSheet({
                   }
                 >
                   <SelectTrigger className="h-8 text-xs bg-white border-[#d3cfc6]">
-                    <SelectValue />
+                    <SelectValue>{phaseName}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">Sin fase</SelectItem>
@@ -234,23 +253,23 @@ export function TaskDetailSheet({
               </div>
             )}
 
-            {/* Description */}
+            {/* Description — rendered as Markdown */}
             {task.description && (
               <>
-                <Separator className="bg-[#e9e7df]/80" />
+                <Separator className="bg-[#d3cfc6]/40" />
                 <div>
                   <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
                     Descripción
                   </label>
-                  <p className="text-xs text-[#535766] leading-relaxed whitespace-pre-wrap">
-                    {task.description}
-                  </p>
+                  <div className="rounded-xl bg-white border border-[#d3cfc6]/30 p-4">
+                    <Markdown content={task.description} />
+                  </div>
                 </div>
               </>
             )}
 
             {/* Comments */}
-            <Separator className="bg-[#e9e7df]/80" />
+            <Separator className="bg-[#d3cfc6]/40" />
             <div>
               <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-3">
                 Comentarios ({task.comments.length})
@@ -260,7 +279,7 @@ export function TaskDetailSheet({
                 {task.comments.map((c) => (
                   <div key={c.id} className="flex gap-2.5">
                     <Avatar className="w-6 h-6 shrink-0">
-                      <AvatarFallback className="bg-[#e9e7df]/80 text-[10px] text-[#535766]">
+                      <AvatarFallback className="bg-[#e9e7df] text-[10px] text-[#535766]">
                         {c.user.name[0]}
                       </AvatarFallback>
                     </Avatar>
@@ -301,7 +320,7 @@ export function TaskDetailSheet({
             </div>
 
             {/* Metadata */}
-            <Separator className="bg-[#e9e7df]/80" />
+            <Separator className="bg-[#d3cfc6]/40" />
             <div className="text-[10px] text-[#535766] space-y-1">
               <p>Creado por {task.creator.name}</p>
               <p>
