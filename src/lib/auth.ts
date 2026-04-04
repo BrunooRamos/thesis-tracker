@@ -19,10 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user) return null;
-
-        // If user needs setup, password is empty — don't allow login
         if (user.needsSetup) return null;
-
         if (!user.password) return null;
 
         const isValid = compareSync(
@@ -45,15 +42,32 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     signIn: "/login",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+        token.image = user.image;
+      }
+      // Refresh avatar from DB on every request to pick up changes
+      if (token.id) {
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { avatar: true, name: true },
+          });
+          if (dbUser) {
+            token.image = dbUser.avatar;
+            token.name = dbUser.name;
+          }
+        } catch {
+          // DB unavailable, keep cached values
+        }
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.image = (token.image as string) || null;
       }
       return session;
     },
