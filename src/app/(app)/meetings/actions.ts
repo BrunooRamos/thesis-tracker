@@ -18,9 +18,7 @@ export async function createMeetingNote(formData: FormData) {
   const summary = formData.get("summary") as string;
   const actionItemsStr = formData.get("actionItems") as string | null;
   const keyDecisions = formData.get("keyDecisions") as string | null;
-  const transcriptUrl = formData.get("transcriptUrl") as string | null;
-  const transcriptName = formData.get("transcriptName") as string | null;
-  const transcriptType = formData.get("transcriptType") as string | null;
+  const attachmentsStr = formData.get("attachments") as string | null;
 
   const attendees = attendeesStr
     ? attendeesStr.split(",").map((a) => a.trim()).filter(Boolean)
@@ -35,6 +33,15 @@ export async function createMeetingNote(formData: FormData) {
     }
   }
 
+  let attachments: Prisma.InputJsonValue[] = [];
+  if (attachmentsStr) {
+    try {
+      attachments = JSON.parse(attachmentsStr);
+    } catch {
+      attachments = [];
+    }
+  }
+
   const meeting = await prisma.meetingNote.create({
     data: {
       title,
@@ -44,9 +51,7 @@ export async function createMeetingNote(formData: FormData) {
       summary,
       actionItems,
       keyDecisions: keyDecisions || undefined,
-      transcriptUrl: transcriptUrl || undefined,
-      transcriptName: transcriptName || undefined,
-      transcriptType: transcriptType || undefined,
+      attachments,
       authorId: session.user.id!,
     },
   });
@@ -67,9 +72,7 @@ export async function updateMeetingNote(
     summary?: string;
     actionItems?: Record<string, unknown>[];
     keyDecisions?: string | null;
-    transcriptUrl?: string | null;
-    transcriptName?: string | null;
-    transcriptType?: string | null;
+    attachments?: unknown[];
   }
 ) {
   const session = await auth();
@@ -84,9 +87,7 @@ export async function updateMeetingNote(
   if (data.summary !== undefined) updateData.summary = data.summary;
   if (data.actionItems !== undefined) updateData.actionItems = data.actionItems;
   if (data.keyDecisions !== undefined) updateData.keyDecisions = data.keyDecisions;
-  if (data.transcriptUrl !== undefined) updateData.transcriptUrl = data.transcriptUrl;
-  if (data.transcriptName !== undefined) updateData.transcriptName = data.transcriptName;
-  if (data.transcriptType !== undefined) updateData.transcriptType = data.transcriptType;
+  if (data.attachments !== undefined) updateData.attachments = data.attachments;
 
   const meeting = await prisma.meetingNote.update({
     where: { id },

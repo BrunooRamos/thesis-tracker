@@ -19,10 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Plus, X, Upload, FileText, Check } from "lucide-react";
+import { Loader2, Plus, X, Upload, FileText, ExternalLink, Check } from "lucide-react";
 import { createMeetingNote, updateMeetingNote } from "@/app/(app)/meetings/actions";
 import type { MeetingNoteWithAuthor } from "./meetings-page";
 import type { User } from "@/types";
+
+interface Attachment {
+  type: "file" | "link";
+  name: string;
+  url: string;
+  fileType?: string;
+}
 
 interface ActionItemInput {
   task: string;
@@ -47,11 +54,13 @@ export function CreateMeetingDrawer({
   const [loading, setLoading] = useState(false);
   const [type, setType] = useState(editingItem?.type || "");
   const [actionItems, setActionItems] = useState<ActionItemInput[]>([]);
-  // Transcript state
-  const [transcriptUrl, setTranscriptUrl] = useState("");
-  const [transcriptName, setTranscriptName] = useState("");
-  const [transcriptType, setTranscriptType] = useState("");
+  const [attachments, setAttachments] = useState<Attachment[]>(
+    (editingItem?.attachments as unknown as Attachment[]) || []
+  );
   const [uploading, setUploading] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
 
   function addActionItem() {
     setActionItems((prev) => [...prev, { task: "", assignee: "", dueDate: "" }]);
@@ -78,9 +87,10 @@ export function CreateMeetingDrawer({
       const res = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await res.json();
       if (res.ok) {
-        setTranscriptUrl(data.url);
-        setTranscriptName(data.fileName);
-        setTranscriptType(data.fileType);
+        setAttachments((prev) => [
+          ...prev,
+          { type: "file", name: data.fileName, url: data.url, fileType: data.fileType },
+        ]);
       } else {
         alert(data.error || "Error al subir archivo");
       }
@@ -88,7 +98,20 @@ export function CreateMeetingDrawer({
       alert("Error al subir archivo");
     } finally {
       setUploading(false);
+      e.target.value = "";
     }
+  }
+
+  function addLink() {
+    if (!linkName.trim() || !linkUrl.trim()) return;
+    setAttachments((prev) => [...prev, { type: "link", name: linkName.trim(), url: linkUrl.trim() }]);
+    setLinkName("");
+    setLinkUrl("");
+    setShowLinkForm(false);
+  }
+
+  function removeAttachment(index: number) {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -99,12 +122,7 @@ export function CreateMeetingDrawer({
 
     const validItems = actionItems.filter((ai) => ai.task.trim());
     formData.set("actionItems", JSON.stringify(validItems));
-
-    if (transcriptUrl) {
-      formData.set("transcriptUrl", transcriptUrl);
-      formData.set("transcriptName", transcriptName);
-      formData.set("transcriptType", transcriptType);
-    }
+    formData.set("attachments", JSON.stringify(attachments));
 
     try {
       if (isEditing && editingItem) {
@@ -120,9 +138,7 @@ export function CreateMeetingDrawer({
           summary: formData.get("summary") as string,
           actionItems: validItems as unknown as Record<string, unknown>[],
           keyDecisions: (formData.get("keyDecisions") as string) || null,
-          transcriptUrl: transcriptUrl || null,
-          transcriptName: transcriptName || null,
-          transcriptType: transcriptType || null,
+          attachments: attachments as unknown[],
         });
         const res = await fetch(`/api/meetings/${editingItem.id}`);
         if (res.ok) {
@@ -137,9 +153,7 @@ export function CreateMeetingDrawer({
           onCreated(full);
           setType("");
           setActionItems([]);
-          setTranscriptUrl("");
-          setTranscriptName("");
-          setTranscriptType("");
+          setAttachments([]);
         } else {
           onOpenChange(false);
         }
@@ -245,52 +259,102 @@ export function CreateMeetingDrawer({
               />
             </div>
 
-            {/* Transcript upload */}
+            {/* Archivos y Links */}
             <div>
               <Label className="text-[10px] text-[#535766] uppercase tracking-wider">
-                Transcripción / Grabación
+                Archivos y Links
               </Label>
-              {transcriptUrl ? (
-                <div className="mt-1.5 flex items-center gap-2 bg-white border border-emerald-200 rounded-lg p-2.5">
-                  <div className="w-7 h-7 rounded-md bg-emerald-50 flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5 text-emerald-500" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] text-[#1a1c24] font-medium truncate">{transcriptName}</p>
-                    <p className="text-[9px] text-emerald-600">Archivo subido</p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => { setTranscriptUrl(""); setTranscriptName(""); setTranscriptType(""); }}
-                    className="text-[#535766]/40 hover:text-red-400 transition-colors"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
+
+              {attachments.length > 0 && (
+                <div className="mt-1.5 space-y-1.5">
+                  {attachments.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2 bg-white border border-[#d3cfc6]/40 rounded-lg p-2.5">
+                      <div className="w-7 h-7 rounded-md bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
+                        {item.type === "file" ? (
+                          <FileText className="w-3.5 h-3.5 text-[#ff7c11]" />
+                        ) : (
+                          <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] text-[#1a1c24] font-medium truncate">{item.name}</p>
+                        <p className="text-[9px] text-[#535766] truncate">
+                          {item.type === "file" ? item.fileType : item.url}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="text-[#535766]/40 hover:text-red-400 transition-colors shrink-0"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
                 </div>
-              ) : (
-                <label className="mt-1.5 flex items-center gap-3 bg-white border border-dashed border-[#d3cfc6] rounded-lg p-3 cursor-pointer hover:border-[#ff7c11]/50 transition-colors">
-                  <div className="w-8 h-8 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
-                    {uploading ? (
-                      <Loader2 className="w-4 h-4 text-[#ff7c11] animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 text-[#ff7c11]" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-[11px] text-[#383c48] font-medium">
-                      {uploading ? "Subiendo..." : "Subir transcripción"}
-                    </p>
-                    <p className="text-[9px] text-[#535766]">PDF, imagen — máx. 10MB</p>
-                  </div>
+              )}
+
+              {showLinkForm && (
+                <div className="mt-2 flex items-center gap-2">
+                  <Input
+                    value={linkName}
+                    onChange={(e) => setLinkName(e.target.value)}
+                    placeholder="Nombre"
+                    className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] flex-1"
+                  />
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="h-8 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] flex-[2]"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={addLink}
+                    className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 shrink-0"
+                  >
+                    <Check className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => { setShowLinkForm(false); setLinkName(""); setLinkUrl(""); }}
+                    className="h-8 w-8 p-0 text-[#535766]/40 hover:text-red-400 hover:bg-red-50 shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              )}
+
+              <div className="mt-2 flex gap-2">
+                <label className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-dashed border-[#d3cfc6] rounded-lg py-2 cursor-pointer hover:border-[#ff7c11]/50 transition-colors">
+                  {uploading ? (
+                    <Loader2 className="w-3.5 h-3.5 text-[#ff7c11] animate-spin" />
+                  ) : (
+                    <Upload className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  )}
+                  <span className="text-[10px] text-[#383c48] font-medium">
+                    {uploading ? "Subiendo..." : "Subir archivo"}
+                  </span>
                   <input
                     type="file"
                     className="hidden"
-                    accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
                     onChange={handleFileUpload}
                     disabled={uploading}
                   />
                 </label>
-              )}
+                <button
+                  type="button"
+                  onClick={() => setShowLinkForm(true)}
+                  className="flex-1 flex items-center justify-center gap-1.5 bg-white border border-dashed border-[#d3cfc6] rounded-lg py-2 hover:border-[#ff7c11]/50 transition-colors"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
+                  <span className="text-[10px] text-[#383c48] font-medium">Agregar link</span>
+                </button>
+              </div>
             </div>
 
             {/* Action items */}

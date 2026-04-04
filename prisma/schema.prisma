@@ -171,9 +171,9 @@ model MeetingNote {
   summary         String
   actionItems     Json[]
   keyDecisions    String?
-  transcriptUrl   String?
-  transcriptName  String?
-  transcriptType  String?
+  // Multiple attachments: files + links
+  // Each item: { type: "file"|"link", name: string, url: string, fileType?: string }
+  attachments     Json[]
   author          User        @relation(fields: [authorId], references: [id])
   authorId        String
   decisions       Decision[]

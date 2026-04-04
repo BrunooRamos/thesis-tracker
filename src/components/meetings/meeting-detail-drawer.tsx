@@ -35,6 +35,13 @@ import {
 import type { MeetingNoteWithAuthor } from "./meetings-page";
 import type { User } from "@/types";
 
+interface Attachment {
+  type: "file" | "link";
+  name: string;
+  url: string;
+  fileType?: string;
+}
+
 const typeBadgeStyles: Record<string, string> = {
   HORIZON_CHECKIN: "bg-[#ff7c11]/10 text-[#ff7c11] border-[#ff7c11]/20",
   TEAM_INTERNAL: "bg-[#1a1c24]/10 text-[#1a1c24] border-[#1a1c24]/20",
@@ -75,11 +82,7 @@ export function MeetingDetailDrawer({
     dueDate?: string;
   }[];
 
-  const hasTranscript = !!meeting.transcriptUrl;
-  const transcriptViewUrl = meeting.transcriptUrl
-    ? getFileViewUrl(meeting.transcriptUrl)
-    : null;
-  const isPdf = meeting.transcriptType?.includes("pdf");
+  const attachments = (meeting.attachments ?? []) as unknown as Attachment[];
 
   async function handleDelete() {
     if (!meeting) return;
@@ -182,48 +185,69 @@ export function MeetingDetailDrawer({
               </div>
             )}
 
-            {/* Transcript */}
-            {hasTranscript && (
-              <>
-                <Separator className="bg-[#e9e7df]/80" />
-                <div>
-                  <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
-                    Transcripción
-                  </label>
-                  <div className="flex items-center gap-3 bg-white border border-[#d3cfc6]/40 rounded-xl p-3">
-                    <div className="w-9 h-9 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
-                      <FileText className="w-4 h-4 text-[#ff7c11]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[#1a1c24] font-medium truncate">
-                        {meeting.transcriptName || "Transcripción"}
-                      </p>
-                      <p className="text-[9px] text-[#535766]">
-                        {meeting.transcriptType?.includes("pdf") ? "PDF" : "Imagen"}
-                      </p>
-                    </div>
-                    <a
-                      href={transcriptViewUrl!}
-                      target={isPdf ? "_blank" : undefined}
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff7c11] text-white text-[10px] font-medium hover:bg-[#ff9a3e] transition-colors"
+            {/* Archivos y Links */}
+            <Separator className="bg-[#e9e7df]/80" />
+            <div>
+              <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
+                Archivos y Links
+              </label>
+              {attachments.length === 0 ? (
+                <p className="text-[10px] text-[#535766]/50 italic">Sin archivos ni links adjuntos</p>
+              ) : (
+                <div className="space-y-2">
+                  {attachments.map((item, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 bg-white border border-[#d3cfc6]/40 rounded-xl p-3"
                     >
-                      {isPdf ? (
-                        <>
-                          <ExternalLink className="w-3 h-3" />
-                          Ver
-                        </>
+                      <div className="w-9 h-9 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
+                        {item.type === "file" ? (
+                          <FileText className="w-4 h-4 text-[#ff7c11]" />
+                        ) : (
+                          <ExternalLink className="w-4 h-4 text-[#ff7c11]" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[#1a1c24] font-medium truncate">{item.name}</p>
+                        <p className="text-[9px] text-[#535766] truncate">
+                          {item.type === "file" ? (item.fileType || "Archivo") : item.url}
+                        </p>
+                      </div>
+                      {item.type === "file" ? (
+                        <a
+                          href={getFileViewUrl(item.url)}
+                          target={item.fileType?.includes("pdf") ? "_blank" : undefined}
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff7c11] text-white text-[10px] font-medium hover:bg-[#ff9a3e] transition-colors shrink-0"
+                        >
+                          {item.fileType?.includes("pdf") ? (
+                            <>
+                              <ExternalLink className="w-3 h-3" />
+                              Ver
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-3 h-3" />
+                              Descargar
+                            </>
+                          )}
+                        </a>
                       ) : (
-                        <>
-                          <Download className="w-3 h-3" />
-                          Descargar
-                        </>
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff7c11] text-white text-[10px] font-medium hover:bg-[#ff9a3e] transition-colors shrink-0"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Abrir
+                        </a>
                       )}
-                    </a>
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              </>
-            )}
+              )}
+            </div>
 
             {/* Summary — rendered as markdown */}
             <Separator className="bg-[#e9e7df]/80" />

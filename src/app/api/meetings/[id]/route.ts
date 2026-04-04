@@ -46,6 +46,7 @@ export async function PATCH(
     "summary",
     "actionItems",
     "keyDecisions",
+    "attachments",
   ];
 
   for (const field of allowedFields) {
