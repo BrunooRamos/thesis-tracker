@@ -174,31 +174,30 @@ export function CreateTaskDialog({
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-[#535766] text-xs font-medium">Fase</Label>
-                <Select value={phaseId || undefined} onValueChange={(v) => setPhaseId(v ?? "")}>
-                  <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
-                    <SelectValue placeholder="Sin fase">
-                      {selectedPhase ? `F${selectedPhase.number}: ${selectedPhase.name}` : "Sin fase"}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {phases.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>F{p.number}: {p.name}</SelectItem>
-                    ))}
+            <div className="space-y-1.5">
+              <Label className="text-[#535766] text-xs font-medium">Fase</Label>
+              <Select value={phaseId || undefined} onValueChange={(v) => setPhaseId(v ?? "")}>
+                <SelectTrigger className="h-10 bg-white border-[#d3cfc6] text-sm">
+                  <SelectValue placeholder="Sin fase">
+                    {selectedPhase ? `F${selectedPhase.number}: ${selectedPhase.name}` : "Sin fase"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {phases.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>F{p.number}: {p.name}</SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-[#535766] text-xs font-medium">Fecha límite</Label>
-                <Input
-                  type="date"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="h-10 bg-white border-[#d3cfc6] text-[#383c48] text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
-                />
-              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-[#535766] text-xs font-medium">Fecha límite</Label>
+              <Input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="h-10 bg-white border-[#d3cfc6] text-[#383c48] text-sm focus:border-[#ff7c11] focus:ring-[#ff7c11]/20"
+              />
             </div>
 
             <div className="space-y-1.5">
