@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Markdown } from "@/components/ui/markdown";
 import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen } from "lucide-react";
+import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteTask, addTaskComment } from "@/app/(app)/tasks/actions";
@@ -266,7 +267,7 @@ export function TaskDetailSheet({
                     <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
                   )}
                   <a
-                    href={task.resource.url || task.resource.fileUrl || "#"}
+                    href={task.resource.url || (task.resource.fileUrl ? getFileViewUrl(task.resource.fileUrl) : "#")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-medium text-[#1a1c24] hover:text-[#ff7c11] transition-colors"

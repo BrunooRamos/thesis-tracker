@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/ui/markdown";
+import { getFileViewUrl } from "@/lib/file-url";
 import {
   Trash2,
   ExternalLink,
@@ -102,6 +103,7 @@ export function ResourceDetailSheet({
 
   const hasFile = !!resource.fileUrl;
   const hasUrl = !!resource.url;
+  const fileViewUrl = resource.fileUrl ? getFileViewUrl(resource.fileUrl) : null;
 
   return (
     <Sheet open={!!resource} onOpenChange={() => onClose()}>
@@ -161,7 +163,7 @@ export function ResourceDetailSheet({
                 {isImageType(resource.fileType) && (
                   <div className="rounded-lg border border-[#d3cfc6]/40 overflow-hidden">
                     <img
-                      src={resource.fileUrl!}
+                      src={fileViewUrl!}
                       alt={resource.fileName || resource.name}
                       className="w-full max-h-48 object-cover"
                     />
@@ -173,7 +175,7 @@ export function ResourceDetailSheet({
                     {resource.fileName}
                   </span>
                   <a
-                    href={resource.fileUrl!}
+                    href={fileViewUrl!}
                     target={isPdfType(resource.fileType) ? "_blank" : undefined}
                     download={!isPdfType(resource.fileType) ? resource.fileName || true : undefined}
                     rel="noopener noreferrer"

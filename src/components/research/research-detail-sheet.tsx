@@ -23,6 +23,7 @@ import {
   Video,
   HelpCircle,
 } from "lucide-react";
+import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteResearchEntry, addResearchComment } from "@/app/(app)/research/actions";
@@ -169,7 +170,7 @@ export function ResearchDetailSheet({
                     <ExternalLink className="w-3.5 h-3.5 text-[#ff7c11]" />
                   )}
                   <a
-                    href={entry.resource.url || entry.resource.fileUrl || "#"}
+                    href={entry.resource.url || (entry.resource.fileUrl ? getFileViewUrl(entry.resource.fileUrl) : "#")}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-medium text-[#1a1c24] hover:text-[#ff7c11] transition-colors"
