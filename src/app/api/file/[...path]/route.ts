@@ -1,4 +1,4 @@
-import { getDownloadUrl } from "@vercel/blob";
+import { get } from "@vercel/blob";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
@@ -19,8 +19,23 @@ export async function GET(
       return NextResponse.json({ error: "Invalid file URL" }, { status: 400 });
     }
 
-    const downloadUrl = getDownloadUrl(blobUrl);
-    return NextResponse.redirect(downloadUrl);
+    const result = await get(blobUrl, {
+      access: "private",
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+    });
+
+    if (!result || result.statusCode !== 200) {
+      return NextResponse.json({ error: "File not found" }, { status: 404 });
+    }
+
+    // Stream the file back with proper headers
+    return new NextResponse(result.stream, {
+      headers: {
+        "Content-Type": result.blob.contentType || "application/octet-stream",
+        "Content-Disposition": result.blob.contentDisposition || "inline",
+        "Cache-Control": "private, max-age=3600",
+      },
+    });
   } catch (err) {
     console.error("File access error:", err);
     return NextResponse.json({ error: "File not found" }, { status: 404 });
