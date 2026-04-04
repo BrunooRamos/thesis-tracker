@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Scale } from "lucide-react";
+import { Plus, Search, Scale, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 import { CreateDecisionDrawer } from "./create-decision-drawer";
 import { DecisionDetailDrawer } from "./decision-detail-drawer";
 import type {
@@ -90,6 +91,7 @@ export function DecisionLog({
   function handleCreated(decision: DecisionWithRelations) {
     setDecisions((prev) => [decision, ...prev]);
     setShowCreate(false);
+    toast.success("Decisión registrada");
   }
 
   function handleUpdated(updated: DecisionWithRelations) {
@@ -100,6 +102,7 @@ export function DecisionLog({
   function handleDeleted(id: string) {
     setDecisions((prev) => prev.filter((d) => d.id !== id));
     setSelectedDecision(null);
+    toast.success("Decisión eliminada");
   }
 
   return (
@@ -112,13 +115,24 @@ export function DecisionLog({
             Registro de decisiones del proyecto
           </p>
         </div>
-        <Button
-          onClick={() => setShowCreate(true)}
-          className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva decision
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("/api/export/decisions", "_blank")}
+            className="h-9 text-xs border-[#d3cfc6] text-[#535766] hover:text-[#1a1c24]"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Exportar MD
+          </Button>
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva decision
+          </Button>
+        </div>
       </div>
 
       {/* Filter bar */}

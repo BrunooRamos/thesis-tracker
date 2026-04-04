@@ -28,6 +28,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { updateTaskStatus } from "@/app/(app)/tasks/actions";
 import { TaskCard } from "./task-card";
 import { CreateTaskDialog } from "./create-task-dialog";
@@ -101,13 +102,22 @@ export function TaskBoard({
       const { draggableId, destination } = result;
       const newStatus = destination.droppableId as Task["status"];
 
+      // Optimistic update
+      const previousTasks = [...tasks];
       setTasks((prev) =>
         prev.map((t) => (t.id === draggableId ? { ...t, status: newStatus } : t))
       );
 
-      await updateTaskStatus(draggableId, newStatus);
+      try {
+        await updateTaskStatus(draggableId, newStatus);
+        toast.success("Estado actualizado");
+      } catch {
+        // Revert on failure
+        setTasks(previousTasks);
+        toast.error("Error al mover tarea");
+      }
     },
-    []
+    [tasks]
   );
 
   const handleTaskCreated = (task: TaskWithRelations) => {

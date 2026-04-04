@@ -30,6 +30,7 @@ import {
 import { getFileViewUrl } from "@/lib/file-url";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import {
   updatePhase,
   updateMilestone,
@@ -132,17 +133,23 @@ function PhaseCard({
 
   async function handleSave() {
     setSaving(true);
-    await updatePhase(phase.id, { name, startDate, endDate, status, progress });
-    onUpdate({
-      ...phase,
-      name,
-      startDate: new Date(startDate),
-      endDate: new Date(endDate),
-      status: status as Phase["status"],
-      progress,
-    });
-    setEditing(false);
-    setSaving(false);
+    try {
+      await updatePhase(phase.id, { name, startDate, endDate, status, progress });
+      onUpdate({
+        ...phase,
+        name,
+        startDate: new Date(startDate),
+        endDate: new Date(endDate),
+        status: status as Phase["status"],
+        progress,
+      });
+      setEditing(false);
+      toast.success("Fase actualizada");
+    } catch {
+      toast.error("Error al actualizar fase");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const statusColors: Record<string, string> = {
@@ -265,8 +272,13 @@ function MilestoneRow({ milestone, onDeleted }: { milestone: Milestone; onDelete
 
   async function handleDelete() {
     if (!confirm(`Eliminar hito "${milestone.name}"?`)) return;
-    await deleteMilestone(milestone.id);
-    onDeleted();
+    try {
+      await deleteMilestone(milestone.id);
+      onDeleted();
+      toast.success("Hito eliminado");
+    } catch {
+      toast.error("Error al eliminar hito");
+    }
   }
 
   if (editing) {
@@ -319,9 +331,14 @@ function AddMilestoneRow({ phaseId, onAdded }: { phaseId: string; onAdded: (m: M
 
   async function handleAdd() {
     if (!code || !name || !dueDate) return;
-    await createMilestone({ code, name, dueDate, phaseId, isFaculty });
-    onAdded({ id: "temp-" + Date.now(), code, name, dueDate: new Date(dueDate), phaseId, isFaculty, status: "PENDING", createdAt: new Date() } as Milestone);
-    setCode(""); setName(""); setDueDate(""); setIsFaculty(false); setOpen(false);
+    try {
+      await createMilestone({ code, name, dueDate, phaseId, isFaculty });
+      onAdded({ id: "temp-" + Date.now(), code, name, dueDate: new Date(dueDate), phaseId, isFaculty, status: "PENDING", createdAt: new Date() } as Milestone);
+      setCode(""); setName(""); setDueDate(""); setIsFaculty(false); setOpen(false);
+      toast.success("Hito agregado");
+    } catch {
+      toast.error("Error al agregar hito");
+    }
   }
 
   if (!open) {
@@ -355,9 +372,14 @@ function TeamSection({ users, onUpdate }: { users: User[]; onUpdate: (u: User[])
 
   async function handleAdd() {
     if (!newName || !newEmail) return;
-    await addUser({ name: newName, email: newEmail, role: "member" });
-    onUpdate([...users, { id: "temp-" + Date.now(), name: newName, email: newEmail, role: "member", password: "", needsSetup: true, avatar: null, createdAt: new Date() } as unknown as User]);
-    setNewName(""); setNewEmail(""); setShowAdd(false);
+    try {
+      await addUser({ name: newName, email: newEmail, role: "member" });
+      onUpdate([...users, { id: "temp-" + Date.now(), name: newName, email: newEmail, role: "member", password: "", needsSetup: true, avatar: null, createdAt: new Date() } as unknown as User]);
+      setNewName(""); setNewEmail(""); setShowAdd(false);
+      toast.success("Usuario agregado");
+    } catch {
+      toast.error("Error al agregar usuario");
+    }
   }
 
   return (
@@ -401,8 +423,14 @@ function UserRow({ user }: { user: User }) {
   async function handleReset() {
     if (!confirm(`¿Resetear contraseña de ${user.name}? Deberá configurarla nuevamente en /setup`)) return;
     setResetting(true);
-    await resetUserPassword(user.id);
-    setResetting(false);
+    try {
+      await resetUserPassword(user.id);
+      toast.success("Contraseña reseteada");
+    } catch {
+      toast.error("Error al resetear contraseña");
+    } finally {
+      setResetting(false);
+    }
   }
 
   async function handleAvatarUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -465,15 +493,25 @@ function TagsSection({ tags, onUpdate }: { tags: TagType[]; onUpdate: (t: TagTyp
 
   async function handleAdd() {
     if (!newName) return;
-    await createTag({ name: newName, color: newColor });
-    onUpdate([...tags, { id: "temp-" + Date.now(), name: newName, color: newColor } as TagType]);
-    setNewName(""); setNewColor("#ff7c11"); setShowAdd(false);
+    try {
+      await createTag({ name: newName, color: newColor });
+      onUpdate([...tags, { id: "temp-" + Date.now(), name: newName, color: newColor } as TagType]);
+      setNewName(""); setNewColor("#ff7c11"); setShowAdd(false);
+      toast.success("Tag creado");
+    } catch {
+      toast.error("Error al crear tag");
+    }
   }
 
   async function handleDelete(tag: TagType) {
     if (!confirm(`Eliminar tag "${tag.name}"?`)) return;
-    await deleteTag(tag.id);
-    onUpdate(tags.filter((t) => t.id !== tag.id));
+    try {
+      await deleteTag(tag.id);
+      onUpdate(tags.filter((t) => t.id !== tag.id));
+      toast.success("Tag eliminado");
+    } catch {
+      toast.error("Error al eliminar tag");
+    }
   }
 
   return (

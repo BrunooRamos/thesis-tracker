@@ -21,6 +21,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Markdown } from "@/components/ui/markdown";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Trash2, Send, Calendar, FileText, ExternalLink, BookOpen, Scale, Pencil, Check } from "lucide-react";
+import { toast } from "sonner";
 import { getFileViewUrl } from "@/lib/file-url";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -108,22 +109,33 @@ export function TaskDetailSheet({
   async function handleDelete() {
     if (!task) return;
     if (!confirm("Eliminar esta tarea?")) return;
-    await deleteTask(task.id);
-    onDeleted(task.id);
+    try {
+      await deleteTask(task.id);
+      onDeleted(task.id);
+      toast.success("Tarea eliminada");
+    } catch {
+      toast.error("Error al eliminar tarea");
+    }
   }
 
   async function handleComment(e: React.FormEvent) {
     e.preventDefault();
     if (!comment.trim() || !task) return;
     setSendingComment(true);
-    await addTaskComment(task.id, comment);
-    const res = await fetch(`/api/tasks/${task.id}`);
-    if (res.ok) {
-      const updated = await res.json();
-      onUpdated(updated);
+    try {
+      await addTaskComment(task.id, comment);
+      const res = await fetch(`/api/tasks/${task.id}`);
+      if (res.ok) {
+        const updated = await res.json();
+        onUpdated(updated);
+      }
+      setComment("");
+      toast.success("Comentario agregado");
+    } catch {
+      toast.error("Error al agregar comentario");
+    } finally {
+      setSendingComment(false);
     }
-    setComment("");
-    setSendingComment(false);
   }
 
   return (

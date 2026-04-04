@@ -21,6 +21,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { Loader2, Plus } from "lucide-react";
+import { toast } from "sonner";
 import { createTask } from "@/app/(app)/tasks/actions";
 import type { User, Phase, Tag } from "@/types";
 import type { TaskWithRelations } from "./task-board";
@@ -82,12 +83,15 @@ export function CreateTaskDialog({
         const fullTask = await res.json();
         onCreated(fullTask);
         resetForm();
+        toast.success("Tarea creada");
       } else {
+        toast.error("Error al obtener la tarea creada");
         setError("Error al obtener la tarea creada");
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al crear la tarea";
       setError(msg);
+      toast.error(msg);
       console.error("Error creating task:", err);
     } finally {
       setLoading(false);

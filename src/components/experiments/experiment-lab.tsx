@@ -13,6 +13,8 @@ import {
   Clock,
   AlertTriangle,
   ArrowUpDown,
+  Download,
+  BarChart3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,8 +28,10 @@ import {
 } from "@/components/ui/select";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { CreateExperimentDrawer } from "./create-experiment-drawer";
 import { ExperimentDetailDrawer } from "./experiment-detail-drawer";
+import { ExperimentCharts } from "./experiment-charts";
 import type { Experiment, User, Comment, Decision } from "@/types";
 
 export type ExperimentWithRelations = Experiment & {
@@ -38,7 +42,7 @@ export type ExperimentWithRelations = Experiment & {
   decisions?: (Decision & { madeBy: User })[];
 };
 
-type ViewMode = "cards" | "table";
+type ViewMode = "cards" | "table" | "charts";
 type SortField = "name" | "architecture" | "status" | "exhaustivity" | "precision" | "latency" | "cost" | "tokenCount";
 type SortDir = "asc" | "desc";
 
@@ -199,11 +203,22 @@ export function ExperimentLab({
             )}
           </Button>
 
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("/api/export/experiments", "_blank")}
+            className="h-9 text-xs border-[#d3cfc6] text-[#535766] hover:text-[#1a1c24]"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Exportar CSV
+          </Button>
+
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-[#d3cfc6] overflow-hidden">
             {[
               { mode: "cards" as const, icon: LayoutGrid, label: "Cards" },
               { mode: "table" as const, icon: Table2, label: "Comparativa" },
+              { mode: "charts" as const, icon: BarChart3, label: "Gráficos" },
             ].map(({ mode, icon: Icon }) => (
               <button
                 key={mode}
@@ -291,7 +306,7 @@ export function ExperimentLab({
       {/* Content */}
       {viewMode === "cards" ? (
         <CardsView experiments={sorted} onSelect={setSelectedExperiment} />
-      ) : (
+      ) : viewMode === "table" ? (
         <ComparisonTable
           experiments={sorted}
           onSelect={setSelectedExperiment}
@@ -299,6 +314,8 @@ export function ExperimentLab({
           sortDir={sortDir}
           onToggleSort={toggleSort}
         />
+      ) : (
+        <ExperimentCharts experiments={sorted} />
       )}
 
       {/* Empty state */}
@@ -317,6 +334,7 @@ export function ExperimentLab({
         onCreated={(exp) => {
           setExperiments((prev) => [exp, ...prev]);
           setShowCreate(false);
+          toast.success("Experimento creado");
         }}
       />
 
@@ -333,6 +351,7 @@ export function ExperimentLab({
         onDeleted={(id) => {
           setExperiments((prev) => prev.filter((e) => e.id !== id));
           setSelectedExperiment(null);
+          toast.success("Experimento eliminado");
         }}
       />
     </div>

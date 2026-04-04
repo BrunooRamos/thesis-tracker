@@ -26,6 +26,7 @@ import {
   Pencil,
 } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
+import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { deleteResearchEntry, addResearchComment } from "@/app/(app)/research/actions";
@@ -80,21 +81,32 @@ export function ResearchDetailSheet({
   async function handleDelete() {
     if (!entry) return;
     if (!confirm("Eliminar este research entry?")) return;
-    await deleteResearchEntry(entry.id);
-    onDeleted(entry.id);
+    try {
+      await deleteResearchEntry(entry.id);
+      onDeleted(entry.id);
+      toast.success("Research eliminado");
+    } catch {
+      toast.error("Error al eliminar research");
+    }
   }
 
   async function handleComment(e: React.FormEvent) {
     e.preventDefault();
     if (!comment.trim() || !entry) return;
     setSendingComment(true);
-    const newComment = await addResearchComment(entry.id, comment);
-    onUpdated({
-      ...entry,
-      comments: [...entry.comments, newComment as ResearchEntryWithRelations["comments"][0]],
-    });
-    setComment("");
-    setSendingComment(false);
+    try {
+      const newComment = await addResearchComment(entry.id, comment);
+      onUpdated({
+        ...entry,
+        comments: [...entry.comments, newComment as ResearchEntryWithRelations["comments"][0]],
+      });
+      setComment("");
+      toast.success("Comentario agregado");
+    } catch {
+      toast.error("Error al agregar comentario");
+    } finally {
+      setSendingComment(false);
+    }
   }
 
   return (

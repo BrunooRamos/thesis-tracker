@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ResourceCategory, User, Phase, Tag } from "@/types";
 import { updateResource, deleteResource } from "@/app/(app)/resources/actions";
+import { toast } from "sonner";
 import { CreateResourceDrawer } from "./create-resource-drawer";
 import { ResourceDetailSheet } from "./resource-detail-sheet";
 import type { ResourceWithRelations } from "./resource-detail-sheet";
@@ -109,14 +110,20 @@ export function ResourcesPage({
   }
 
   async function handleDelete(id: string) {
-    setResources((prev) => prev.filter((r) => r.id !== id));
-    if (selectedResource?.id === id) setSelectedResource(null);
-    await deleteResource(id);
+    try {
+      setResources((prev) => prev.filter((r) => r.id !== id));
+      if (selectedResource?.id === id) setSelectedResource(null);
+      await deleteResource(id);
+      toast.success("Recurso eliminado");
+    } catch {
+      toast.error("Error al eliminar recurso");
+    }
   }
 
   function handleCreated(resource: ResourceWithRelations) {
     setResources((prev) => [resource, ...prev]);
     setDrawerOpen(false);
+    toast.success("Recurso agregado");
   }
 
   function handleCardClick(resource: ResourceWithRelations) {

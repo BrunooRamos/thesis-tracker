@@ -11,6 +11,7 @@ import {
   Wrench,
   Star,
   FileText,
+  Download,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { ResearchCard } from "./research-card";
 import { CreateResearchDialog } from "./create-research-dialog";
 import { ResearchDetailSheet } from "./research-detail-sheet";
@@ -186,6 +188,16 @@ export function ResearchHub({
           </div>
 
           <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("/api/export/research", "_blank")}
+            className="h-9 text-xs border-[#d3cfc6] text-[#535766] hover:text-[#1a1c24]"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Exportar CSV
+          </Button>
+
+          <Button
             size="sm"
             onClick={() => setShowCreate(true)}
             className="h-9 text-xs bg-[#ff7c11] hover:bg-[#ff9a3e] text-white"
@@ -335,6 +347,7 @@ export function ResearchHub({
         onCreated={(entry) => {
           setEntries((prev) => [entry, ...prev]);
           setShowCreate(false);
+          toast.success("Research entry creado");
         }}
       />
 
@@ -350,6 +363,7 @@ export function ResearchHub({
         onDeleted={(id) => {
           setEntries((prev) => prev.filter((e) => e.id !== id));
           setSelectedEntry(null);
+          toast.success("Research entry eliminado");
         }}
       />
     </div>

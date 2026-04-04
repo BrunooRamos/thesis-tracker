@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Search, Calendar } from "lucide-react";
+import { Plus, Search, Calendar, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { UserAvatar } from "@/components/ui/user-avatar";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { toast } from "sonner";
 import { CreateMeetingDrawer } from "./create-meeting-drawer";
 import { MeetingDetailDrawer } from "./meeting-detail-drawer";
 import type { MeetingNote, User, MeetingType, Decision } from "@/types";
@@ -68,6 +69,7 @@ export function MeetingsPage({
   function handleCreated(meeting: MeetingNoteWithAuthor) {
     setMeetings((prev) => [meeting, ...prev]);
     setShowCreate(false);
+    toast.success("Reunión registrada");
   }
 
   function handleUpdated(updated: MeetingNoteWithAuthor) {
@@ -80,6 +82,7 @@ export function MeetingsPage({
   function handleDeleted(id: string) {
     setMeetings((prev) => prev.filter((m) => m.id !== id));
     setSelectedMeeting(null);
+    toast.success("Reunión eliminada");
   }
 
   return (
@@ -92,13 +95,24 @@ export function MeetingsPage({
             Notas y acuerdos de reuniones
           </p>
         </div>
-        <Button
-          onClick={() => setShowCreate(true)}
-          className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full gap-2"
-        >
-          <Plus className="w-4 h-4" />
-          Nueva reunion
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open("/api/export/meetings", "_blank")}
+            className="h-9 text-xs border-[#d3cfc6] text-[#535766] hover:text-[#1a1c24]"
+          >
+            <Download className="w-3.5 h-3.5 mr-1.5" />
+            Exportar MD
+          </Button>
+          <Button
+            onClick={() => setShowCreate(true)}
+            className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Nueva reunion
+          </Button>
+        </div>
       </div>
 
       {/* Filter bar */}
