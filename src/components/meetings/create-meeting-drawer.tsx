@@ -342,6 +342,7 @@ export function CreateMeetingDrawer({
                   <input
                     type="file"
                     className="hidden"
+                    accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.md,.markdown,.txt"
                     onChange={handleFileUpload}
                     disabled={uploading}
                   />

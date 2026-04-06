@@ -227,14 +227,14 @@ export function CreateResourceDrawer({
                         : "Arrastra un archivo o hace click para seleccionar"}
                     </span>
                     <span className="text-[10px] text-[#535766]/50">
-                      PDF, PNG, JPG -- max. 10MB
+                      PDF, MD, TXT, PNG, JPG -- max. 10MB
                     </span>
                   </div>
                 )}
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,.gif,.webp"
+                  accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.md,.markdown,.txt"
                   onChange={handleFileSelect}
                   className="hidden"
                 />

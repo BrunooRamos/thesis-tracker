@@ -24,13 +24,20 @@ import {
   Loader2,
   Scale,
   Pencil,
+  Upload,
+  Plus,
+  X,
+  Check,
 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import Link from "next/link";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   deleteMeetingNote,
   convertActionItemToTask,
+  updateMeetingNote,
 } from "@/app/(app)/meetings/actions";
 import type { MeetingNoteWithAuthor } from "./meetings-page";
 import type { User } from "@/types";
@@ -73,6 +80,10 @@ export function MeetingDetailDrawer({
 }) {
   const [convertedItems, setConvertedItems] = useState<Set<number>>(new Set());
   const [convertingIndex, setConvertingIndex] = useState<number | null>(null);
+  const [uploadingAttachment, setUploadingAttachment] = useState(false);
+  const [showLinkForm, setShowLinkForm] = useState(false);
+  const [linkName, setLinkName] = useState("");
+  const [linkUrl, setLinkUrl] = useState("");
 
   if (!meeting) return null;
 
@@ -83,6 +94,64 @@ export function MeetingDetailDrawer({
   }[];
 
   const attachments = (meeting.attachments ?? []) as unknown as Attachment[];
+
+  async function persistAttachments(newAttachments: Attachment[]) {
+    if (!meeting) return;
+    try {
+      await updateMeetingNote(meeting.id, { attachments: newAttachments as unknown as Record<string, unknown>[] });
+      onUpdated({ ...meeting, attachments: newAttachments as unknown as MeetingNoteWithAuthor["attachments"] });
+      toast.success("Adjuntos actualizados");
+    } catch {
+      toast.error("Error al actualizar adjuntos");
+    }
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingAttachment(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      const data = await res.json();
+      if (res.ok) {
+        const newAttachment: Attachment = {
+          type: "file",
+          name: data.fileName,
+          url: data.url,
+          fileType: data.fileType,
+        };
+        await persistAttachments([...attachments, newAttachment]);
+      } else {
+        toast.error(data.error || "Error al subir archivo");
+      }
+    } catch {
+      toast.error("Error al subir archivo");
+    } finally {
+      setUploadingAttachment(false);
+      e.target.value = "";
+    }
+  }
+
+  async function handleAddLink() {
+    if (!linkName.trim() || !linkUrl.trim()) return;
+    const newAttachment: Attachment = {
+      type: "link",
+      name: linkName.trim(),
+      url: linkUrl.trim(),
+    };
+    await persistAttachments([...attachments, newAttachment]);
+    setLinkName("");
+    setLinkUrl("");
+    setShowLinkForm(false);
+  }
+
+  async function handleRemoveAttachment(index: number) {
+    if (!confirm("Eliminar este adjunto?")) return;
+    const newAttachments = attachments.filter((_, i) => i !== index);
+    await persistAttachments(newAttachments);
+  }
 
   async function handleDelete() {
     if (!meeting) return;
@@ -188,9 +257,67 @@ export function MeetingDetailDrawer({
             {/* Archivos y Links */}
             <Separator className="bg-[#e9e7df]/80" />
             <div>
-              <label className="text-[10px] text-[#535766] uppercase tracking-wider block mb-2">
-                Archivos y Links
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[10px] text-[#535766] uppercase tracking-wider">
+                  Archivos y Links
+                </label>
+                <div className="flex items-center gap-1">
+                  <label className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/5 cursor-pointer transition-colors">
+                    {uploadingAttachment ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Upload className="w-3 h-3" />
+                    )}
+                    {uploadingAttachment ? "Subiendo..." : "Subir"}
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.md,.markdown,.txt"
+                      onChange={handleFileUpload}
+                      disabled={uploadingAttachment}
+                    />
+                  </label>
+                  <button
+                    onClick={() => setShowLinkForm(!showLinkForm)}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] text-[#535766] hover:text-[#ff7c11] hover:bg-[#ff7c11]/5 transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                    Link
+                  </button>
+                </div>
+              </div>
+
+              {showLinkForm && (
+                <div className="flex items-center gap-2 mb-2 p-2 bg-white border border-[#d3cfc6] rounded-xl">
+                  <Input
+                    value={linkName}
+                    onChange={(e) => setLinkName(e.target.value)}
+                    placeholder="Nombre"
+                    className="h-8 text-xs bg-white border-[#d3cfc6] flex-1"
+                  />
+                  <Input
+                    value={linkUrl}
+                    onChange={(e) => setLinkUrl(e.target.value)}
+                    placeholder="https://..."
+                    className="h-8 text-xs bg-white border-[#d3cfc6] flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleAddLink}
+                    disabled={!linkName.trim() || !linkUrl.trim()}
+                    className="h-8 px-2 bg-[#ff7c11] hover:bg-[#ff9a3e] text-white"
+                  >
+                    <Check className="w-3 h-3" />
+                  </Button>
+                  <button
+                    onClick={() => { setShowLinkForm(false); setLinkName(""); setLinkUrl(""); }}
+                    className="text-[#535766]/40 hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
+
               {attachments.length === 0 ? (
                 <p className="text-[10px] text-[#535766]/50 italic">Sin archivos ni links adjuntos</p>
               ) : (
@@ -198,7 +325,7 @@ export function MeetingDetailDrawer({
                   {attachments.map((item, index) => (
                     <div
                       key={index}
-                      className="flex items-center gap-3 bg-white border border-[#d3cfc6]/40 rounded-xl p-3"
+                      className="flex items-center gap-3 bg-white border border-[#d3cfc6]/40 rounded-xl p-3 group/att"
                     >
                       <div className="w-9 h-9 rounded-lg bg-[#ff7c11]/10 flex items-center justify-center shrink-0">
                         {item.type === "file" ? (
@@ -216,11 +343,11 @@ export function MeetingDetailDrawer({
                       {item.type === "file" ? (
                         <a
                           href={getFileViewUrl(item.url)}
-                          target={item.fileType?.includes("pdf") ? "_blank" : undefined}
+                          target={item.fileType?.includes("pdf") || item.fileType?.includes("markdown") || item.fileType?.includes("text") ? "_blank" : undefined}
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#ff7c11] text-white text-[10px] font-medium hover:bg-[#ff9a3e] transition-colors shrink-0"
                         >
-                          {item.fileType?.includes("pdf") ? (
+                          {item.fileType?.includes("pdf") || item.fileType?.includes("markdown") || item.fileType?.includes("text") ? (
                             <>
                               <ExternalLink className="w-3 h-3" />
                               Ver
@@ -243,6 +370,13 @@ export function MeetingDetailDrawer({
                           Abrir
                         </a>
                       )}
+                      <button
+                        onClick={() => handleRemoveAttachment(index)}
+                        className="opacity-0 group-hover/att:opacity-100 text-[#535766]/40 hover:text-red-400 transition-all shrink-0"
+                        title="Eliminar adjunto"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   ))}
                 </div>

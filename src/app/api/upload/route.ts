@@ -31,10 +31,16 @@ export async function POST(request: Request) {
       "image/jpeg",
       "image/gif",
       "image/webp",
+      "text/markdown",
+      "text/plain",
+      "text/x-markdown",
+      "application/octet-stream", // Some browsers send .md as this
     ];
-    if (!allowedTypes.includes(file.type)) {
+    const isMd = file.name.toLowerCase().endsWith(".md") || file.name.toLowerCase().endsWith(".markdown");
+    const isTxt = file.name.toLowerCase().endsWith(".txt");
+    if (!allowedTypes.includes(file.type) && !isMd && !isTxt) {
       return NextResponse.json(
-        { error: "Tipo de archivo no permitido (PDF, PNG, JPG, GIF, WebP)" },
+        { error: "Tipo de archivo no permitido (PDF, MD, TXT, PNG, JPG, GIF, WebP)" },
         { status: 400 }
       );
     }
@@ -52,10 +58,15 @@ export async function POST(request: Request) {
       token: process.env.BLOB_READ_WRITE_TOKEN,
     });
 
+    // Normalize fileType for markdown/txt files
+    let fileType = file.type;
+    if (isMd) fileType = "text/markdown";
+    else if (isTxt) fileType = "text/plain";
+
     return NextResponse.json({
       url: blob.url,
       fileName: file.name,
-      fileType: file.type,
+      fileType,
     });
   } catch (err) {
     console.error("Upload error:", err);
