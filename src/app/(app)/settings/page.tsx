@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { SettingsPanel } from "@/components/settings/settings-panel";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function SettingsPage() {
   const [phases, users, tags] = await Promise.all([
     prisma.phase.findMany({

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ResourcesPage } from "@/components/resources/resources-page";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function ResourcesServerPage() {
   const [resources, users, phases, tags, researchEntries] = await Promise.all([
     prisma.resource.findMany({

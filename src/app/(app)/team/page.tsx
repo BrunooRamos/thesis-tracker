@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { TeamView } from "@/components/team/team-view";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function TeamPage() {
   const users = await prisma.user.findMany({
     include: {

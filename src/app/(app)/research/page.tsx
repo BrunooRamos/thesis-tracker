@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ResearchHub } from "@/components/research/research-hub";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function ResearchPage() {
   const entries = await prisma.researchEntry.findMany({
     include: {

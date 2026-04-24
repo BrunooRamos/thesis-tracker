@@ -2,6 +2,9 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { TaskBoard } from "@/components/tasks/task-board";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function TasksPage() {
   const session = await auth();
   const [tasks, users, phases, tags] = await Promise.all([

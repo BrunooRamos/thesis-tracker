@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { MeetingsPage } from "@/components/meetings/meetings-page";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function MeetingsRoute() {
   const [meetingNotes, users] = await Promise.all([
     prisma.meetingNote.findMany({

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ExperimentLab } from "@/components/experiments/experiment-lab";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function ExperimentsPage() {
   const [experiments, users] = await Promise.all([
     prisma.experiment.findMany({

@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { DecisionLog } from "@/components/decisions/decision-log";
 
+export const dynamic = "force-dynamic";
+
+
 export default async function DecisionsPage() {
   const [decisions, users, meetings, researchEntries, experiments, phases, tags] =
     await Promise.all([

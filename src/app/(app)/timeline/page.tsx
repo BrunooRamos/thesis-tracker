@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { TimelineView } from "@/components/timeline/timeline-view";
 
+export const dynamic = "force-dynamic";
+
 export default async function TimelinePage() {
   const [phases, tasks, research, experiments, meetings, decisions] =
     await Promise.all([
