@@ -52,6 +52,7 @@ export const statusLabel: Record<string, string> = {
 };
 
 const views = [
+  { value: "ALL", label: "Todas" },
   { value: "MINE", label: "Mi vista" },
   { value: "BY_PERSON", label: "Por persona" },
   { value: "BY_PHASE", label: "Por fase" },
@@ -159,7 +160,7 @@ export function ActivitiesPage({
   currentUserId: string;
 }) {
   const [activities, setActivities] = useState(initialActivities);
-  const [view, setView] = useState<ViewMode>("MINE");
+  const [view, setView] = useState<ViewMode>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | ActivityStatus>(
     "ALL"
   );
@@ -335,16 +336,33 @@ export function ActivitiesPage({
             Ajusta los filtros o la búsqueda.
           </p>
         </div>
+      ) : view === "ALL" ? (
+        <div className="space-y-3">
+          {filtered.map((a) => (
+            <ActivityCard
+              key={a.id}
+              activity={a}
+              onClick={() => setSelected(a)}
+            />
+          ))}
+        </div>
       ) : view === "MINE" ? (
         mineActivities.length === 0 ? (
           <div className="text-center py-16">
             <ListChecks className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
             <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
-              No tienes actividades asignadas
+              No tenés actividades asignadas
             </h3>
-            <p className="text-xs text-[#535766]">
-              Cambia a otra vista o asígnate una actividad.
+            <p className="text-xs text-[#535766] mb-4">
+              Asignate una actividad como owner, o cambiá a la vista &quot;Todas&quot;.
             </p>
+            <Button
+              onClick={() => setView("ALL")}
+              variant="outline"
+              className="text-xs border-[#d3cfc6]"
+            >
+              Ver todas
+            </Button>
           </div>
         ) : (
           <div className="space-y-3">
