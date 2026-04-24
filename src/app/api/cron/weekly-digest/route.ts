@@ -2,9 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(request: Request) {
-  // Verify cron secret (Vercel sends this header)
+  // Verify cron secret (Vercel sends this header). Trim to defend against
+  // stray whitespace/newlines that may creep into env vars.
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const expected = `Bearer ${(process.env.CRON_SECRET ?? "").trim()}`;
+  if (authHeader !== expected) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
