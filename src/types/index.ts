@@ -13,6 +13,9 @@ export type {
   ActivityLogModel as ActivityLog,
   ResourceModel as Resource,
   NotificationModel as Notification,
+  ActivityModel as Activity,
+  DeliverableModel as Deliverable,
+  AcceptanceCriterionModel as AcceptanceCriterion,
 } from "@/generated/prisma/models";
 
 export type {
@@ -26,4 +29,5 @@ export type {
   DecisionStatus,
   MeetingType,
   ResourceCategory,
+  ActivityStatus,
 } from "@/generated/prisma/enums";

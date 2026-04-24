@@ -24,6 +24,7 @@ model User {
   meetingNotes    MeetingNote[]
   resources       Resource[]
   notifications   Notification[]
+  ownedActivities Activity[]      @relation("activityOwners")
   createdAt       DateTime        @default(now())
 }
 
@@ -38,6 +39,7 @@ model Phase {
   progress    Int         @default(0)
   tasks       Task[]
   milestones  Milestone[]
+  activities  Activity[]
   createdAt   DateTime    @default(now())
 }
 
@@ -75,6 +77,8 @@ model Task {
   researchEntryId String?
   decision        Decision?      @relation("DecisionTask", fields: [decisionId], references: [id], onDelete: SetNull)
   decisionId      String?
+  activity        Activity?      @relation(fields: [activityId], references: [id], onDelete: SetNull)
+  activityId      String?
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 }
@@ -195,6 +199,8 @@ model Comment {
   experimentId    String?
   decision        Decision?      @relation(fields: [decisionId], references: [id], onDelete: Cascade)
   decisionId      String?
+  activity        Activity?      @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId      String?
   createdAt       DateTime       @default(now())
 }
 
@@ -238,6 +244,55 @@ model ActivityLog {
   userName    String
   metadata    Json?
   createdAt   DateTime @default(now())
+}
+
+model Activity {
+  id                 String                @id @default(cuid())
+  wbsCode            String                @unique
+  name               String
+  description        String?
+  status             ActivityStatus        @default(NOT_STARTED)
+  startDate          DateTime?
+  endDate            DateTime?
+  phase              Phase                 @relation(fields: [phaseId], references: [id])
+  phaseId            String
+  owners             User[]                @relation("activityOwners")
+  tasks              Task[]
+  deliverables       Deliverable[]
+  acceptanceCriteria AcceptanceCriterion[]
+  comments           Comment[]
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+}
+
+model Deliverable {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  fileUrl     String?
+  fileName    String?
+  fileType    String?
+  order       Int      @default(0)
+  activity    Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId  String
+  createdAt   DateTime @default(now())
+}
+
+model AcceptanceCriterion {
+  id         String   @id @default(cuid())
+  text       String
+  done       Boolean  @default(false)
+  order      Int      @default(0)
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  createdAt  DateTime @default(now())
+}
+
+enum ActivityStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  BLOCKED
+  DONE
 }
 
 enum PhaseStatus {

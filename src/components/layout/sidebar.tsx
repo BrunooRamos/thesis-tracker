@@ -17,6 +17,7 @@ import {
   GanttChart,
   Menu,
   X,
+  ListChecks,
 } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -25,6 +26,7 @@ import { ThemeToggle } from "./theme-toggle";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "Actividades", href: "/actividades", icon: ListChecks },
   { name: "Tareas", href: "/tasks", icon: CheckSquare },
   { name: "Research", href: "/research", icon: BookOpen },
   { name: "Timeline", href: "/timeline", icon: GanttChart },
