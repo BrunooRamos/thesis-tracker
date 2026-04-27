@@ -30,11 +30,11 @@ export type ActivityWithRelations = Activity & {
 };
 
 const statusFilters = [
-  { value: "ALL", label: "Todas" },
+  { value: "ALL", label: "Todos" },
   { value: "NOT_STARTED", label: "Sin iniciar" },
   { value: "IN_PROGRESS", label: "En curso" },
-  { value: "BLOCKED", label: "Bloqueada" },
-  { value: "DONE", label: "Completada" },
+  { value: "BLOCKED", label: "Bloqueado" },
+  { value: "DONE", label: "Completado" },
 ] as const;
 
 const statusBadge: Record<string, string> = {
@@ -47,12 +47,12 @@ const statusBadge: Record<string, string> = {
 export const statusLabel: Record<string, string> = {
   NOT_STARTED: "Sin iniciar",
   IN_PROGRESS: "En curso",
-  BLOCKED: "Bloqueada",
-  DONE: "Completada",
+  BLOCKED: "Bloqueado",
+  DONE: "Completado",
 };
 
 const views = [
-  { value: "ALL", label: "Todas" },
+  { value: "ALL", label: "Todos" },
   { value: "MINE", label: "Mi vista" },
   { value: "BY_PERSON", label: "Por persona" },
   { value: "BY_PHASE", label: "Por fase" },
@@ -204,7 +204,7 @@ export function ActivitiesPage({
   function handleDeleted(id: string) {
     setActivities((prev) => prev.filter((a) => a.id !== id));
     setSelected(null);
-    toast.success("Actividad eliminada");
+    toast.success("Hito eliminado");
   }
 
   // Grouping
@@ -241,7 +241,7 @@ export function ActivitiesPage({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-[#1a1c24]">Actividades</h1>
+          <h1 className="text-xl font-semibold text-[#1a1c24]">Hitos</h1>
           <p className="text-sm text-[#535766] mt-0.5">
             Work packages del WBS y sus entregables
           </p>
@@ -254,7 +254,7 @@ export function ActivitiesPage({
           className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full gap-2"
         >
           <Plus className="w-4 h-4" />
-          Nueva actividad
+          Nuevo hito
         </Button>
       </div>
 
@@ -311,10 +311,10 @@ export function ActivitiesPage({
         <div className="text-center py-16">
           <ListChecks className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
           <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
-            Sin actividades
+            Sin hitos
           </h3>
           <p className="text-xs text-[#535766] mb-4">
-            Crea tu primera actividad o pre-carga desde el plan del proyecto.
+            Creá tu primer hito o pre-cargá desde el plan del proyecto.
           </p>
           <Button
             onClick={() => {
@@ -323,14 +323,14 @@ export function ActivitiesPage({
             }}
             className="bg-[#ff7c11] hover:bg-[#ff9a3e] text-white rounded-full text-xs"
           >
-            <Plus className="w-3.5 h-3.5 mr-1" /> Crear primera actividad
+            <Plus className="w-3.5 h-3.5 mr-1" /> Crear primer hito
           </Button>
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
           <ListChecks className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
           <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
-            No se encontraron actividades
+            No se encontraron hitos
           </h3>
           <p className="text-xs text-[#535766]">
             Ajusta los filtros o la búsqueda.
@@ -351,10 +351,10 @@ export function ActivitiesPage({
           <div className="text-center py-16">
             <ListChecks className="w-12 h-12 text-[#d3cfc6] mx-auto mb-3" />
             <h3 className="text-sm font-medium text-[#1a1c24] mb-1">
-              No tenés actividades asignadas
+              No tenés hitos asignados
             </h3>
             <p className="text-xs text-[#535766] mb-4">
-              Asignate una actividad como owner, o cambiá a la vista &quot;Todas&quot;.
+              Asignate un hito como owner, o cambiá a la vista &quot;Todos&quot;.
             </p>
             <Button
               onClick={() => setView("ALL")}
@@ -391,14 +391,14 @@ export function ActivitiesPage({
                       {u.name}
                     </p>
                     <p className="text-[10px] text-[#535766]">
-                      {list.length} actividad{list.length !== 1 ? "es" : ""}
+                      {list.length} hito{list.length !== 1 ? "s" : ""}
                     </p>
                   </div>
                 </div>
                 <div className="space-y-2">
                   {list.length === 0 ? (
                     <p className="text-[10px] text-[#535766]/60 italic">
-                      Sin actividades
+                      Sin hitos
                     </p>
                   ) : (
                     list.map((a) => (

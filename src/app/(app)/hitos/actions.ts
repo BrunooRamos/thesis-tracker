@@ -9,7 +9,7 @@ import type { ActivityStatus } from "@/types";
 const MAX_OWNERS = 3;
 
 function revalidateAll() {
-  revalidatePath("/actividades");
+  revalidatePath("/hitos");
   revalidatePath("/");
   revalidatePath("/tasks");
 }
@@ -103,7 +103,7 @@ export async function deleteActivity(id: string) {
   if (!session?.user?.id) throw new Error("Unauthorized");
 
   const activity = await prisma.activity.findUnique({ where: { id } });
-  if (!activity) throw new Error("Actividad no encontrada");
+  if (!activity) throw new Error("Hito no encontrado");
 
   await prisma.activity.delete({ where: { id } });
   await logActivity("deleted_activity", "activity", id, `${activity.wbsCode} · ${activity.name}`);

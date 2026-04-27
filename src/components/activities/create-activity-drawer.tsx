@@ -25,7 +25,7 @@ import { toast } from "sonner";
 import {
   createActivity,
   updateActivity,
-} from "@/app/(app)/actividades/actions";
+} from "@/app/(app)/hitos/actions";
 import type { ActivityWithRelations } from "./activities-page";
 import type { User, Phase, ActivityStatus } from "@/types";
 
@@ -124,7 +124,7 @@ export function CreateActivityDrawer({
         if (res.ok) {
           const full = await res.json();
           onCreated(full);
-          toast.success("Actividad actualizada");
+          toast.success("Hito actualizado");
         }
       } else {
         const formData = new FormData();
@@ -143,7 +143,7 @@ export function CreateActivityDrawer({
         if (res.ok) {
           const full = await res.json();
           onCreated(full);
-          toast.success("Actividad creada");
+          toast.success("Hito creado");
           resetForm();
         } else {
           onOpenChange(false);
@@ -163,7 +163,7 @@ export function CreateActivityDrawer({
       <SheetContent className="bg-[#f9f8f5] border-[#d3cfc6]/50 w-full sm:max-w-2xl p-0">
         <SheetHeader className="px-6 pt-6 pb-4 border-b border-[#d3cfc6]/40">
           <SheetTitle className="text-[#1a1c24] text-base font-semibold">
-            {isEditing ? "Editar actividad" : "Nueva actividad"}
+            {isEditing ? "Editar hito" : "Nuevo hito"}
           </SheetTitle>
         </SheetHeader>
 
@@ -190,7 +190,7 @@ export function CreateActivityDrawer({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
-                  placeholder="Nombre de la actividad"
+                  placeholder="Nombre del hito"
                   className="mt-1.5 h-9 text-xs bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11]"
                 />
               </div>
@@ -204,7 +204,7 @@ export function CreateActivityDrawer({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                placeholder="Describe la actividad..."
+                placeholder="Describí el hito..."
                 className="mt-1.5 text-xs font-mono bg-white border-[#d3cfc6] text-[#383c48] placeholder:text-[#535766]/50 focus:border-[#ff7c11] resize-none"
               />
               <p className="text-[10px] text-[#535766]/60 mt-1">
@@ -320,7 +320,7 @@ export function CreateActivityDrawer({
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 ) : null}
-                {isEditing ? "Guardar cambios" : "Crear actividad"}
+                {isEditing ? "Guardar cambios" : "Crear hito"}
               </Button>
             </div>
           </form>

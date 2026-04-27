@@ -17,7 +17,7 @@ const pageTitles: Record<string, string> = {
   "/resources": "Recursos",
   "/settings": "Settings",
   "/timeline": "Timeline",
-  "/actividades": "Actividades",
+  "/hitos": "Hitos",
 };
 
 export function Header() {

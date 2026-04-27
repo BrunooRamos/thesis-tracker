@@ -49,7 +49,7 @@ import {
   deleteCriterion,
   linkTaskToActivity,
   addActivityComment,
-} from "@/app/(app)/actividades/actions";
+} from "@/app/(app)/hitos/actions";
 import type { ActivityWithRelations } from "./activities-page";
 import { statusLabel } from "./activities-page";
 import type { User, Phase, Task } from "@/types";
@@ -143,7 +143,7 @@ export function ActivityDetailDrawer({
 
   async function handleDelete() {
     if (!activity) return;
-    if (!confirm("¿Eliminar esta actividad?")) return;
+    if (!confirm("¿Eliminar este hito?")) return;
     try {
       await deleteActivity(activity.id);
       onDeleted(activity.id);

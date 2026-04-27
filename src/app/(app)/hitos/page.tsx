@@ -4,7 +4,7 @@ import { ActivitiesPage } from "@/components/activities/activities-page";
 
 export const dynamic = "force-dynamic";
 
-export default async function ActividadesPage() {
+export default async function HitosPage() {
   const session = await auth();
 
   const [activities, users, phases] = await Promise.all([
