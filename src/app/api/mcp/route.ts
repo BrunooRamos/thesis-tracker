@@ -13,7 +13,7 @@ import {
 // o no valida, y re-chequea expiresAt en cada request.
 
 const mcpHandler = createMcpHandler(registerTools, {
-  serverInfo: { name: "thesis-tracker", version: "1.0.0" },
+  serverInfo: { name: "thesis-tracker", version: "1.1.0" },
 });
 
 async function verifyToken(

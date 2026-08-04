@@ -27,7 +27,7 @@ El tracker expone un servidor [MCP](https://modelcontextprotocol.io) (Streamable
 
 ### Herramientas disponibles
 
-Lectura: `get_project_overview`, `search`, `list_tasks`, `list_activities`, `list_research`, `list_decisions`, `list_experiments`. Escritura (actúan como el dueño del token y quedan auditadas): `create_task`, `update_task`, `create_research_entry`.
+Lectura: `get_project_overview`, `search`, `list_tasks`, `list_activities`, `list_research`, `list_decisions`, `list_experiments`, `list_meetings`. Escritura (actúan como el dueño del token y quedan auditadas): `create_task`, `update_task`, `create_research_entry`, `create_meeting`, `upload_attachment` (archivos base64 hasta 3MB → Vercel Blob privado, vinculables a minutas).
 
 > Nota de despliegue: el modelo `McpToken` requiere sincronizar el esquema con `npm run db:push` (el proyecto no usa migraciones).
 
