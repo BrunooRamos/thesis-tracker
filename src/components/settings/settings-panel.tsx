@@ -26,6 +26,7 @@ import {
   ChevronDown,
   ChevronRight,
   Camera,
+  Plug,
 } from "lucide-react";
 import { getFileViewUrl } from "@/lib/file-url";
 import { UserAvatar } from "@/components/ui/user-avatar";
@@ -42,6 +43,8 @@ import {
   createTag,
   deleteTag,
 } from "@/app/(app)/settings/actions";
+import { McpSection } from "@/components/settings/mcp-section";
+import type { McpTokenView } from "@/app/(app)/settings/mcp-actions";
 import type { Phase, Milestone, User, Tag as TagType } from "@/types";
 
 type PhaseWithMilestones = Phase & { milestones: Milestone[] };
@@ -50,10 +53,12 @@ export function SettingsPanel({
   phases: initialPhases,
   users: initialUsers,
   tags: initialTags,
+  mcpTokens,
 }: {
   phases: PhaseWithMilestones[];
   users: User[];
   tags: TagType[];
+  mcpTokens: McpTokenView[];
 }) {
   const [phases, setPhases] = useState(initialPhases);
   const [users, setUsers] = useState(initialUsers);
@@ -82,6 +87,10 @@ export function SettingsPanel({
             <Tag className="w-3.5 h-3.5 mr-1.5" />
             Tags
           </TabsTrigger>
+          <TabsTrigger value="mcp" className="text-xs data-[state=active]:bg-[#ff7c11] data-[state=active]:text-white rounded-lg">
+            <Plug className="w-3.5 h-3.5 mr-1.5" />
+            MCP
+          </TabsTrigger>
         </TabsList>
 
         {/* PHASES TAB */}
@@ -106,6 +115,11 @@ export function SettingsPanel({
         {/* TAGS TAB */}
         <TabsContent value="tags" className="space-y-4">
           <TagsSection tags={tags} onUpdate={setTags} />
+        </TabsContent>
+
+        {/* MCP TAB */}
+        <TabsContent value="mcp" className="space-y-4">
+          <McpSection tokens={mcpTokens} />
         </TabsContent>
       </Tabs>
     </div>
