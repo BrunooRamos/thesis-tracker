@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./prisma";
 import { createNotification } from "./notifications";
 
@@ -13,6 +14,22 @@ const PRIORITY = ["LOW", "MEDIUM", "HIGH", "URGENT"] as const;
 const ACTIVITY_STATUS = ["NOT_STARTED", "IN_PROGRESS", "BLOCKED", "DONE"] as const;
 const RESEARCH_TYPE = ["PAPER", "ARTICLE", "REPO", "TOOL", "VIDEO", "OTHER"] as const;
 const RELEVANCE = ["LOW", "MEDIUM", "HIGH", "CRITICAL"] as const;
+const MEETING_TYPE = ["HORIZON_CHECKIN", "TEAM_INTERNAL", "TUTOR_ACADEMIC", "OTHER"] as const;
+
+// Same allowlist as /api/upload. Decoded cap is 3MB (below the app's 10MB):
+// base64 inflates ~33% and serverless request bodies top out at 4.5MB.
+const UPLOAD_MAX_BYTES = 3 * 1024 * 1024;
+const UPLOAD_TYPES: Record<string, string> = {
+  pdf: "application/pdf",
+  png: "image/png",
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  gif: "image/gif",
+  webp: "image/webp",
+  md: "text/markdown",
+  markdown: "text/markdown",
+  txt: "text/plain",
+};
 
 type ToolContext = { http?: { authInfo?: { extra?: Record<string, unknown> } } };
 
@@ -506,6 +523,192 @@ export function registerTools(server: McpServer) {
         },
       });
       return ok(decisions);
+    }
+  );
+
+  server.registerTool(
+    "list_meetings",
+    {
+      title: "Listar minutas",
+      description:
+        "Lista minutas de reuniones con asistentes, resumen, action items y adjuntos.",
+      inputSchema: z.object({
+        type: z.enum(MEETING_TYPE).optional(),
+        limit: z.number().int().min(1).max(100).optional().describe("Default 20"),
+      }),
+      annotations: { readOnlyHint: true },
+    },
+    async ({ type, limit }) => {
+      const meetings = await prisma.meetingNote.findMany({
+        where: type ? { type } : undefined,
+        orderBy: { date: "desc" },
+        take: limit ?? 20,
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          type: true,
+          attendees: true,
+          summary: true,
+          actionItems: true,
+          keyDecisions: true,
+          attachments: true,
+          author: { select: userSelect },
+          createdAt: true,
+        },
+      });
+      return ok(meetings);
+    }
+  );
+
+  server.registerTool(
+    "create_meeting",
+    {
+      title: "Crear minuta",
+      description:
+        "Registra una minuta de reunión. Los adjuntos pueden ser links, o archivos subidos antes con upload_attachment (usando su url).",
+      inputSchema: z.object({
+        title: z.string().min(1),
+        date: z.string().describe("Fecha de la reunión, ISO (YYYY-MM-DD)"),
+        type: z.enum(MEETING_TYPE),
+        summary: z.string().min(1),
+        attendees: z.array(z.string()).optional().describe("Nombres de asistentes"),
+        keyDecisions: z.string().optional(),
+        actionItems: z
+          .array(
+            z.object({
+              task: z.string(),
+              assignee: z.string().optional().describe("Nombre del responsable"),
+              dueDate: z.string().optional().describe("Fecha ISO"),
+            })
+          )
+          .optional(),
+        attachments: z
+          .array(
+            z.object({
+              type: z.enum(["file", "link"]),
+              name: z.string(),
+              url: z.string(),
+              fileType: z.string().optional(),
+            })
+          )
+          .optional(),
+      }),
+    },
+    async (
+      { title, date, type, summary, attendees, keyDecisions, actionItems, attachments },
+      ctx
+    ) => {
+      const user = requireUser(ctx as ToolContext);
+
+      const meeting = await prisma.meetingNote.create({
+        data: {
+          title,
+          date: parseDate(date, "date"),
+          type,
+          summary,
+          attendees: attendees ?? [],
+          keyDecisions,
+          actionItems: (actionItems ?? []).map((ai) => ({
+            task: ai.task,
+            assignee: ai.assignee ?? "",
+            dueDate: ai.dueDate ?? "",
+          })) as Prisma.InputJsonValue[],
+          attachments: (attachments ?? []) as unknown as Prisma.InputJsonValue[],
+          authorId: user.id,
+        },
+        select: {
+          id: true,
+          title: true,
+          date: true,
+          type: true,
+          attendees: true,
+          attachments: true,
+        },
+      });
+
+      await logMcpActivity("created_meeting", "meeting", meeting.id, meeting.title, user);
+      return ok(meeting);
+    }
+  );
+
+  server.registerTool(
+    "upload_attachment",
+    {
+      title: "Subir adjunto",
+      description:
+        "Sube un archivo (base64) al storage y opcionalmente lo vincula a una minuta existente. Tipos: PDF, MD, TXT, PNG, JPG, GIF, WebP. Máximo 3MB; para archivos más grandes usar la web.",
+      inputSchema: z.object({
+        fileName: z.string().min(1).describe("Nombre con extensión, ej: minuta.pdf"),
+        contentBase64: z.string().min(1).describe("Contenido del archivo en base64"),
+        meetingId: z
+          .string()
+          .optional()
+          .describe("Si se indica, el archivo se agrega a los adjuntos de esa minuta"),
+      }),
+    },
+    async ({ fileName, contentBase64, meetingId }, ctx) => {
+      const user = requireUser(ctx as ToolContext);
+
+      const ext = fileName.toLowerCase().split(".").pop() ?? "";
+      const fileType = UPLOAD_TYPES[ext];
+      if (!fileType) {
+        throw new Error(
+          `Tipo de archivo no permitido: .${ext}. Permitidos: ${Object.keys(UPLOAD_TYPES).join(", ")}`
+        );
+      }
+
+      const meeting = meetingId
+        ? await prisma.meetingNote.findUnique({ where: { id: meetingId } })
+        : null;
+      if (meetingId && !meeting) throw new Error("Minuta no encontrada.");
+
+      let buffer: Buffer;
+      try {
+        buffer = Buffer.from(contentBase64, "base64");
+      } catch {
+        throw new Error("contentBase64 no es base64 válido.");
+      }
+      if (buffer.length === 0) throw new Error("El archivo está vacío.");
+      if (buffer.length > UPLOAD_MAX_BYTES) {
+        throw new Error(
+          `Archivo muy grande (${(buffer.length / 1024 / 1024).toFixed(1)}MB, máx. 3MB por MCP). Subilo desde la web.`
+        );
+      }
+
+      if (!process.env.BLOB_READ_WRITE_TOKEN) {
+        throw new Error("File storage no configurado (falta BLOB_READ_WRITE_TOKEN).");
+      }
+
+      const { put } = await import("@vercel/blob");
+      const blob = await put(fileName, buffer, {
+        access: "private",
+        addRandomSuffix: true,
+        token: process.env.BLOB_READ_WRITE_TOKEN,
+      });
+
+      const attachment = { type: "file", name: fileName, url: blob.url, fileType };
+
+      if (meeting) {
+        await prisma.meetingNote.update({
+          where: { id: meeting.id },
+          data: {
+            attachments: { push: attachment as unknown as Prisma.InputJsonValue },
+          },
+        });
+        await logMcpActivity(
+          "updated_meeting",
+          "meeting",
+          meeting.id,
+          meeting.title,
+          user
+        );
+      }
+
+      return ok({
+        attachment,
+        linkedToMeeting: meeting ? { id: meeting.id, title: meeting.title } : null,
+      });
     }
   );
 
