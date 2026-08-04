@@ -25,7 +25,24 @@ model User {
   resources       Resource[]
   notifications   Notification[]
   ownedActivities Activity[]      @relation("activityOwners")
+  mcpTokens       McpToken[]
   createdAt       DateTime        @default(now())
+}
+
+// Bearer tokens for the MCP endpoint (/api/mcp). Only the SHA-256 hash is
+// stored; the plaintext is shown once at creation. Renewal extends expiresAt
+// without rotating the token.
+model McpToken {
+  id         String    @id @default(cuid())
+  name       String    @default("MCP")
+  tokenHash  String    @unique
+  tokenHint  String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  expiresAt  DateTime
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
 }
 
 model Phase {

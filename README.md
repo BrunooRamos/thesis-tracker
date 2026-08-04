@@ -1,5 +1,36 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Servidor MCP
+
+El tracker expone un servidor [MCP](https://modelcontextprotocol.io) (Streamable HTTP) en `/api/mcp` para conectarlo a Claude, Cursor u otros clientes.
+
+### Autenticación
+
+- Los tokens se crean desde **Configuración → MCP** (requiere sesión iniciada).
+- Cada token dura **30 días** y se puede **renovar manualmente por 30 días más sin cambiar su valor** (solo se extiende el vencimiento). También se puede revocar.
+- En la base solo se guarda el **hash SHA-256** del token; el valor completo se muestra una única vez al crearlo.
+- Medidas adicionales: máximo 5 tokens activos por usuario, rate limit de intentos fallidos de autenticación, verificación de expiración/revocación en cada request, registro de creación/renovación/revocación en el activity log y `lastUsedAt` por token. El endpoint no expone herramientas destructivas ni de gestión de usuarios, y la gestión de tokens solo es posible con sesión (nunca con el propio token MCP).
+
+### Configuración del cliente
+
+```json
+{
+  "mcpServers": {
+    "thesis-tracker": {
+      "type": "http",
+      "url": "https://<tu-dominio>/api/mcp",
+      "headers": { "Authorization": "Bearer <TU_TOKEN>" }
+    }
+  }
+}
+```
+
+### Herramientas disponibles
+
+Lectura: `get_project_overview`, `search`, `list_tasks`, `list_activities`, `list_research`, `list_decisions`, `list_experiments`. Escritura (actúan como el dueño del token y quedan auditadas): `create_task`, `update_task`, `create_research_entry`.
+
+> Nota de despliegue: el modelo `McpToken` requiere sincronizar el esquema con `npm run db:push` (el proyecto no usa migraciones).
+
 ## Getting Started:
 
 First, run the development server:
